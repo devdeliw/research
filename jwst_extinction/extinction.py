@@ -284,11 +284,11 @@ class Generate_CMD:
             # Bins for magnitude array and bins for color array
             bins_mag = np.arange(mag_min, mag_max, binsize_mag)
             bins_clr = np.arange(clr_min, clr_max, binsize_clr)
-
-            #############################f######################################
+            
+            #-----------------------------------------------------------------#
             # Construct binned CMD of stars, where each star magnitude
             # is a 2D Guassian of width equal to photometric error
-            ###################################################################
+            #-----------------------------------------------------------------#
 
             print('Making error-weighted color-magnitude diagram.')
             #obs_pdf = np.zeros((len(mag_arr),len(bins_mag)-1,len(bins_clr)-1))
@@ -336,11 +336,13 @@ class Generate_CMD:
             # Let's make sure we have the contribution from all stars (within 1 star)
             assert np.isclose(np.sum(obs_pdf_sum), len(mag1), atol=1)
         
-            ###################################################################
+            #-----------------------------------------------------------------#
             # Plot the observed probability density functions (Hess diagram)
-            ###################################################################
+            #-----------------------------------------------------------------#
+
             # Limits of the plot; can be specified in the initiation of the
             # function using hess_extent    
+            
             if hess_extent == None:
                 # If not specified, determine boundaries from color and
                 # magnitude histograms
@@ -389,9 +391,9 @@ class Generate_CMD:
             ax1.axis('tight')
             fig1.savefig(fig_path + 'error_weighted_hess_diagram_{0}_{1}.png'.format(mag1_filt, mag2_filt))
         
-            ###################################################################
+            #-----------------------------------------------------------------#
             # Generate the unsharp mask
-            ###################################################################
+            #-----------------------------------------------------------------#
             # Create astropy kernel object of desired width based on the magnitude
             # binsize
             sigma_mask = mask_width / binsize_mag
@@ -399,13 +401,14 @@ class Generate_CMD:
 
             # Create mask by convolving gaussian kernel with pdf
             mask = convolve(obs_pdf_sum, gauss)
-
-            ###################################################################
+            
+            #-----------------------------------------------------------------#
             # Plot the unsharp mask
-            ###################################################################
+            #-----------------------------------------------------------------#
 
             # Limits of the plot; can be specified in the initiation of the
             # function using unsharp_mask_extent
+
             if unsharp_mask_extent == None:
                 clr_min = bins_clr[0]
                 clr_max = bins_clr[-1]
@@ -451,20 +454,22 @@ class Generate_CMD:
             ax2.axis('tight')
 
             fig2.savefig(fig_path + 'unsharp_mask_{0}_{1}.png'.format(mag1_filt, mag2_filt))
-
-            ###################################################################
+            
+            #-----------------------------------------------------------------#
             # Subtract mask from original binned CMD (Hess diagram) to get
             # the final, sharpened CMD
-            ###################################################################
+            #-----------------------------------------------------------------#
+
             print('Generating final pdf.')
             pdf_final = obs_pdf_sum - mask
 
-            ###################################################################
+            #-----------------------------------------------------------------#
             # Plot the final, sharpened binned CMD
-            ###################################################################
+            #-----------------------------------------------------------------#
 
             # Limits of the plot; can be specified in the initiation of the
             # function using final_cmd_extent
+
             if final_cmd_extent == None:
                 clr_min = bins_clr[0]
                 clr_max = bins_clr[-1]
@@ -690,7 +695,7 @@ class RC_stars:
 
         axis[0].invert_yaxis()
 
-        ########################################################################
+        #------------------------------------------------------------------------------#
 
         axis[1].set_title(catalog1_name + " - " + catalog2_name + 
                           " vs. " + catalog1_name + " | Entries: " + 
