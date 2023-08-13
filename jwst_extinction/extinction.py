@@ -538,17 +538,17 @@ class Generate_CMD:
 
         Parameters:
         _____________
-        hist: 2D numpy array
+        hist    : 2D numpy array
            2D image-sharpened probability density
            function
 
-        magbins: 1D numpy array
+        magbins : 1D numpy array
            bin boundaries for magnitudes
 
-        clrbins: 1D numpy array
+        clrbins : 1D numpy array
            bin boundaries for colors
 
-        outName: string
+        outName : string
            path + filename of the pickle file
            of the histogram
 
@@ -576,23 +576,23 @@ class RC_stars:
         Parameters: 
         -----------
         
-        m1_match    : list
+        m1_match        : list
             list of first catalog magnitudes from matched stars after using 
             Generate_CMD.match()
 
-        m2_match    : list
+        m2_match        : list
             list of second catalog magnitudes from matched stars after using
             Generate_CMD.match()
 
-        slope1, slope2 : float
+        slope1, slope2  : float
             the slope of linear RC bar cutoffs for (vs. m1, and vs. m2),
             respectively
 
-        b_min1 & b_min2         : float
+        b_min1 & b_min2 : float
             the y_intercept for the lower RC bar cutoff for (vs. m1, vs. m2)
             respectively
 
-        b_max1 & b_max2         : float
+        b_max1 & b_max2 : float
             the y_intercept for the upper RC bar cutoff for (vs. m1, vs. m2)
             respectively
 
