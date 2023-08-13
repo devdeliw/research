@@ -710,5 +710,7 @@ class RC_stars:
         axis[1].plot(np.unique(RCx2), np.poly1d(np.polyfit(RCx2, RCy2, 1))(np.unique(RCx2)))
 
         axis[1].invert_yaxis()
+        
+        file_name = str(catalog1_name) + "_" + str(catalog2_name) + "_RCbar" 
 
-        fig.savefig('/Users/devaldeliwala/research/jwst_extinction/img/cmd/f115w_212n_RCbar.png')
+        fig.savefig(f"/Users/devaldeliwala/research/jwst_extinction/img/cmd/{file_name!r}.png")
