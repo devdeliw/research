@@ -712,5 +712,4 @@ class RC_stars:
         axis[1].invert_yaxis()
         
         file_name = str(catalog1_name) + "_" + str(catalog2_name) + "_RCbar" 
-
         fig.savefig(f"/Users/devaldeliwala/research/jwst_extinction/img/cmd/{file_name!r}.png")
