@@ -1,0 +1,3 @@
+[submodule "code/SPISEA"]
+	path = code/SPISEA
+	url = https://github.com/astropy/SPISEA
