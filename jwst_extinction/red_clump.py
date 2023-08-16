@@ -9,8 +9,8 @@ wavelengths respectively.
 
 # generating DataFrame objects using the 1.15 and 2.12 µm wavelength catalogs
 
-df = pd.read_csv("catalog115w.csv", delimiter = ",")
-df2 = pd.read_csv("catalog212n.csv", delimiter = ",")
+df = pd.read_csv("catalogs/catalog115w.csv", delimiter = ",")
+df2 = pd.read_csv("catalogs/catalog212n.csv", delimiter = ",")
 
 #---------------------------------------------------#
 

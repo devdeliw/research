@@ -270,9 +270,18 @@ class SPISEA_CMD:
 
         return
 
+    def extinction_vector(self):
+        """
+        Displays extinction_vector of the CMD based on the theoretical
+        isochrones generated. If all works well, this extinction vector should
+        line up pretty closely with the vibrant RC Bar on the cmd. 
+        
+        """
 
-df = pd.read_csv("catalog115w.csv", delimiter = ",")
-df2 = pd.read_csv("catalog212n.csv", delimiter = ",")
+
+
+df = pd.read_csv("catalogs/catalog115w.csv", delimiter = ",")
+df2 = pd.read_csv("catalogs/catalog212n.csv", delimiter = ",")
 
 #---------------------------------------------------#
 
@@ -280,4 +289,4 @@ cmd = SPISEA_CMD(df, df2, "jwst_115w", "jwst_212n", dr_tol = 15, dm_tol = 15,
                    y_axis_m1 = True)
 
 cmd.theoretical_iso(np.log(10**9), 2, 8000, -0.3, ['jwst,F212N', 'jwst,F115W'],
-                    "/Users/devaldeliwala/research/jwst_extinction/img/isochrones")
+                    "/Users/devaldeliwala/research/jwst_extinction/media/isochrones")

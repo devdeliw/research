@@ -147,7 +147,8 @@ class Generate_CMD:
 
             plt.scatter(arr_diff, m2_match, c = z, s = 1)
             plt.gca().invert_yaxis()
-            plt.savefig("/Users/devaldeliwala/research/jwst_extinction/img/cmd/jwst_115212_212.png")
+            file_name = self.catalog1_name + self.catalog2_name + self.catalog2_name
+            plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/cmd_{file_name}.png")
 
         else: 
             xy = np.vstack([arr_diff, m1_match])
@@ -158,7 +159,8 @@ class Generate_CMD:
 
             plt.scatter(arr_diff, m1_match, c = z, s = 1)
             plt.gca().invert_yaxis()
-            plt.savefig("/Users/devaldeliwala/research/jwst_extinction/img/cmd/jwst_115212_115.png")
+            file_name = self.catalog1_name + self.catalog2_name +  self.catalog1_name
+            plt.savefig("/Users/devaldeliwala/research/jwst_extinction/media/cmd/cmd_{file_name}.png")
 
         return m1_match, m2_match
 
@@ -172,9 +174,9 @@ class Generate_CMD:
                      fig_dimensions = 'default',
                      hess_extent = None,
                      fig_path
-                     = "/Users/devaldeliwala/research/jwst_extinction/img/unsharp_mask/",
+                     = "/Users/devaldeliwala/research/jwst_extinction/media/unsharp_mask/",
                      data_path
-                     = "/Users/devaldeliwala/research/jwst_extinction/img/unsharp_mask/",
+                     = "/Users/devaldeliwala/research/jwst_extinction/media/unsharp_mask/",
                      vmini = None, vmaxi = None,
                      vminf = None, vmaxf = None,
                      recalc = False):
@@ -717,4 +719,4 @@ class RC_stars:
         axis[1].invert_yaxis()
         
         file_name = str(catalog1_name) + "_" + str(catalog2_name) + "_RCbar" 
-        fig.savefig(f"/Users/devaldeliwala/research/jwst_extinction/img/cmd/{file_name!r}.png")
+        fig.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/{file_name!r}.png")
