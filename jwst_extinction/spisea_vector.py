@@ -264,7 +264,7 @@ class SPISEA_CMD:
 
         file_name = filt_list[0] + filt_list[1]
         dfy = pd.DataFrame(my_iso.points['phase'])
-        dfy.to_csv('theoretical_iso{file_name}.csv')
+        dfy.to_csv(f"spisea_iso{file_name}.csv")
 
         print('The columns in the isochrone table are: {0}'.format(my_iso.points.keys()))
 
