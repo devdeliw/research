@@ -460,24 +460,10 @@ class SPISEA_CMD:
     
         file_name = self.catalog1_name + self.catalog2_name
         plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/isochrones/isochrone_cmd_{file_name}.png")
+        return 
 
         
 
 
 
-df3 = pd.read_csv("catalogs/catalog323n.csv", delimiter = ",")
-df4 = pd.read_csv("catalogs/catalog444w.csv", delimiter = ",")
-
-
-spisea2 = SPISEA_CMD(df3, df4, "jwst_323n", "jwst_405n", dr_tol = 15, dm_tol = 15,
-                   y_axis_m1 = True)
-
-#idxs3, idxs4, dr2, dm2, m3, m4, m3_err, m4_err = spisea2.match()
-
-#m3_match, m4_match = spisea2.cmd(idxs3, idxs4, m3, m4)
-
-spisea2.extinction_vector(np.log(10**9), 2, 1.5, 8000, -0.3, ['jwst,F323N', 'jwst,F405N'],
-                    "/Users/devaldeliwala/research/jwst_extinction/media/isochrones")
-
-#---------------------------------------------------#
 
