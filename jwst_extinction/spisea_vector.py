@@ -166,7 +166,7 @@ class SPISEA_CMD:
 
             x_name = self.catalog1_name + self.catalog2_name
             y_name = self.catalog2_name
-            plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/img/cmd/cmd_{x_name}_{y_name}_SPISEA.png")
+            plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/cmd_{x_name}_{y_name}_SPISEA.png")
 
         else:
             xy = np.vstack([arr_diff, m1_match])
@@ -191,18 +191,21 @@ class SPISEA_CMD:
 
             x_name = self.catalog1_name + self.catalog2_name
             y_name = self.catalog1_name
-            plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/img/cmd/cmd_{x_name}_{y_name}_SPISEA.png")
+            plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/cmd_{x_name}_{y_name}_SPISEA.png")
 
         return m1_match, m2_match
 
 
-    def theoretical_iso(self, logAge, AKs, dist, metallicity, filt_list,
+    def extinction_vector(self, logAge, AKs, AKs_step, dist, metallicity, filt_list,
                           iso_dir): 
 
         """
         Generates theoretical isochrone based on the age, distance,
         metallicity to a starcluster. Uses the MIST evolution model and the
         Fritz+11 extinction law. 
+
+        Afterwards plots the increasing extinction isochrones against a CMD
+        that should follow along with the slope of the RC Bar
 
         Parameters:
         -----------
@@ -221,6 +224,8 @@ class SPISEA_CMD:
 
         filt_list   :   list
                 list of starclusters filters used -- see SPISEA documentation
+                [catalog1_name (smaller wavelength), catalog2_name (bigger
+                wavelength)]
 
         iso_dir     :   string
                 directory to place generated theoretical isochrones
@@ -230,12 +235,14 @@ class SPISEA_CMD:
         evo_model = evolution.MISTv1()
         atm_func  = atmospheres.get_merged_atmosphere
         red_law   = reddening.RedLawFritz11(scale_lambda=2.166)
+        print(filt_list)
 
-        AKs2 = AKs  + 0.3
-        AKs3 = AKs2 + 0.3
-        AKs4 = AKs3 + 0.3
-        AKs5 = AKs4 + 0.3
+        AKs2 = AKs  + AKs_step
+        AKs3 = AKs2 + AKs_step
+        AKs4 = AKs3 + AKs_step
+        AKs5 = AKs4 + AKs_step
 
+        # Generating Isochrones
         my_iso = synthetic.IsochronePhot(logAge, AKs, dist, metallicity,
                                     evo_model=evo_model, atm_func=atm_func,
                                     red_law=red_law, filters=filt_list,
@@ -268,25 +275,209 @@ class SPISEA_CMD:
 
         print('The columns in the isochrone table are: {0}'.format(my_iso.points.keys()))
 
-        return
+        idx = np.where( abs(my_iso.points['mass'] - 1.0) == min(abs(my_iso.points['mass'] - 1.0)) )[0]
+        filter_1 = np.round(my_iso.points[idx[0]][''+my_iso.points.keys()[9]], decimals=3)
+        filter_2 = np.round(my_iso.points[idx[0]][''+my_iso.points.keys()[8]], decimals=3)
 
-    def extinction_vector(self):
-        """
-        Displays extinction_vector of the CMD based on the theoretical
-        isochrones generated. If all works well, this extinction vector should
-        line up pretty closely with the vibrant RC Bar on the cmd. 
+        idx2 = np.where( abs(my_iso2.points['mass'] - 1.0) == min(abs(my_iso2.points['mass'] - 1.0)) )[0]
+        filter1_2 = np.round(my_iso2.points[idx2[0]][''+my_iso2.points.keys()[9]], decimals=3)
+        filter2_2 = np.round(my_iso2.points[idx2[0]][''+my_iso2.points.keys()[8]], decimals=3)
+
+        idx3 = np.where( abs(my_iso3.points['mass'] - 1.0) == min(abs(my_iso3.points['mass'] - 1.0)) )[0]
+        filter1_3 = np.round(my_iso3.points[idx3[0]][''+my_iso3.points.keys()[9]], decimals=3)
+        filter2_3 = np.round(my_iso3.points[idx3[0]][''+my_iso3.points.keys()[8]], decimals=3)
+
+        idx4 = np.where( abs(my_iso4.points['mass'] - 1.0) == min(abs(my_iso4.points['mass'] - 1.0)) )[0]
+        filter1_4 = np.round(my_iso4.points[idx4[0]][''+my_iso4.points.keys()[9]], decimals=3)
+        filter2_4 = np.round(my_iso4.points[idx4[0]][''+my_iso4.points.keys()[8]], decimals=3)
+
+        idx5 = np.where( abs(my_iso5.points['mass'] - 1.0) == min(abs(my_iso5.points['mass'] - 1.0)) )[0]
+        filter1_5 = np.round(my_iso5.points[idx5[0]][''+my_iso5.points.keys()[9]], decimals=3)
+        filter2_5 = np.round(my_iso5.points[idx5[0]][''+my_iso.points.keys()[8]], decimals=3)
+
+        print('1 M_sun: {0} = {1} mag, {2} = {3}\
+              mag'.format(self.catalog1_name, filter_1, self.catalog2_name,
+              filter_2))
+
+        # Making Initial Mass Function (IMF)
         
-        """
+        # Make multiplicity object Here, we use the MultiplicityUnresolved object,
+        # based on Lu+13. This means that star systems will be unresolved, i.e.,
+        # that all components of a star system are combined into a single "star" in the cluster
+        imf_multi = multiplicity.MultiplicityUnresolved()
+
+        # Make IMF object; we'll use a broken power law with the parameters from Kroupa+01
+
+        # NOTE: when defining the power law slope for each segment of the IMF, we define
+        # the entire exponent, including the negative sign. For example, if dN/dm $\propto$ m^-alpha,
+        # then you would use the value "-2.3" to specify an IMF with alpha = 2.3.
+
+        massLimits = np.array([0.2, 0.5, 1, 120]) # Define boundaries of each mass segement
+        powers = np.array([-1.3, -2.3, -2.3]) # Power law slope associated with each mass segment
+        my_imf = imf.IMF_broken_powerlaw(massLimits, powers, imf_multi)
+
+        # Define total cluster mass
+        mass = 10**5.
+
+        # Make cluster object
+        cluster = synthetic.ResolvedCluster(my_iso, my_imf, mass)
+
+        # Look at the cluster CMD, compared to input isochrone. Note the impact of
+        # multiple systems on the photometry
+        clust = cluster.star_systems
+        iso = my_iso.points
+
+        # Plotting Synthetic Isochrones
+        fig, axis = plt.subplots(2,1, figsize = (20,20))
+
+        axis[0].plot(clust[''+my_iso.points.keys()[9]]
+                     - clust[''+my_iso.points.keys()[8]], 
+                     clust[''+my_iso.points.keys()[9]], 'k.', ms=5, alpha=0.1, label='__nolegend__')
+        axis[0].plot(iso[''+my_iso.points.keys()[9]]
+                     - iso[''+my_iso.points.keys()[8]],
+                     iso[''+my_iso.points.keys()[9]],
+               'r-', label='Isochrone')
+        axis[0].set_xlabel(self.catalog1_name + " - " + self.catalog2_name)
+        axis[0].set_ylabel(self.catalog1_name)
+        axis[0].invert_yaxis()
+        axis[0].legend()
+
+        axis[1].plot(clust[''+my_iso.points.keys()[9]]
+                     - clust[''+my_iso.points.keys()[8]],
+                     clust[''+my_iso.points.keys()[8]], 'k.', ms=5, alpha=0.1, label='__nolegend__')
+        axis[1].plot(iso[''+my_iso.points.keys()[9]]
+                     - iso[''+my_iso.points.keys()[8]],
+                     iso[''+my_iso.points.keys()[8]],
+               'r-', label='Isochrone')
+        axis[1].set_xlabel(self.catalog1_name + " - " + self.catalog2_name)
+        axis[1].set_ylabel(self.catalog2_name)
+        axis[1].invert_yaxis()
+        axis[1].legend()
+
+        file_name = self.catalog1_name + self.catalog2_name
+        plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/isochrones/syn_isochrone_{file_name}.png")
+
+
+        # Creating Isochrone-CMD Plot
+    
+        idxs1, idxs2, dr, dm, m1, m2, m1_err, m2_err = self.match()
+        m1_match, m2_match = self.cmd(idxs1, idxs2, m1, m2)
+        
+        arr_diff = np.subtract(m1_match, m2_match)
+        
+        fig, axis = plt.subplots(2, 1, figsize = (20,20))
+
+        axis[0].plot(my_iso.points[''+my_iso.points.keys()[9]]
+                - my_iso.points[''+my_iso.points.keys()[8]], 
+            my_iso.points[''+my_iso.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso.points[''+my_iso.points.keys()[9]][idx]
+                - my_iso.points[''+my_iso.points.keys()[8]][idx], 
+           my_iso.points[''+my_iso.points.keys()[9]][idx], 'b*', ms=15, label='1 $M_\odot$')
+
+        axis[0].plot(my_iso2.points[''+my_iso2.points.keys()[9]]
+                - my_iso2.points[''+my_iso2.points.keys()[8]], 
+            my_iso2.points[''+my_iso2.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso2.points[''+my_iso2.points.keys()[9]][idx2]
+                - my_iso2.points[''+my_iso2.points.keys()[8]][idx2], 
+           my_iso2.points[''+my_iso2.points.keys()[9]][idx2], 'b*', ms=15, label='_nolegend_')
+
+        axis[0].plot(my_iso3.points[''+my_iso3.points.keys()[9]]
+                - my_iso3.points[''+my_iso3.points.keys()[8]], 
+            my_iso3.points[''+my_iso3.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso3.points[''+my_iso3.points.keys()[9]][idx3]
+             - my_iso3.points[''+my_iso3.points.keys()[8]][idx3], 
+           my_iso3.points[''+my_iso3.points.keys()[9]][idx3], 'b*', ms=15, label='_nolegend_')
+
+        axis[0].plot(my_iso4.points[''+my_iso4.points.keys()[9]]
+            - my_iso4.points[''+my_iso4.points.keys()[8]], 
+            my_iso4.points[''+my_iso4.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso4.points[''+my_iso4.points.keys()[9]][idx4]
+            - my_iso4.points[''+my_iso4.points.keys()[8]][idx4], 
+           my_iso4.points[''+my_iso4.points.keys()[9]][idx4], 'b*', ms=15, label='_nolegend_')
+
+        axis[0].plot(my_iso5.points[''+my_iso5.points.keys()[9]]
+                - my_iso5.points[''+my_iso5.points.keys()[8]], 
+            my_iso5.points[''+my_iso5.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso5.points[''+my_iso5.points.keys()[9]][idx5]
+                - my_iso5.points[''+my_iso5.points.keys()[8]][idx5], 
+           my_iso5.points[''+my_iso5.points.keys()[9]][idx5], 'b*', ms=15, label='_nolegend_')
+
+        nbins=600
+        k = kde.gaussian_kde([arr_diff, m1_match])
+        xi, yi = np.mgrid[min(arr_diff):max(arr_diff):nbins*1j,
+                              min(m1_match):max(m1_match):nbins*1j]
+        zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+
+        axis[0].pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
+        axis[0].invert_yaxis()
+
+        #----------------------------------------------------#
+
+        axis[1].plot(my_iso.points[''+my_iso.points.keys()[9]]
+                - my_iso.points[''+my_iso.points.keys()[8]],
+            my_iso.points[''+my_iso.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso.points[''+my_iso.points.keys()[9]][idx]
+                - my_iso.points[''+my_iso.points.keys()[8]][idx],
+           my_iso.points[''+my_iso.points.keys()[8]][idx], 'b*', ms=15, label='1 $M_\odot$')
+
+        axis[1].plot(my_iso2.points[''+my_iso2.points.keys()[9]]
+                - my_iso2.points[''+my_iso2.points.keys()[8]],
+            my_iso2.points[''+my_iso2.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso2.points[''+my_iso2.points.keys()[9]][idx2]
+                - my_iso2.points[''+my_iso2.points.keys()[8]][idx2],
+           my_iso2.points[''+my_iso2.points.keys()[8]][idx2], 'b*', ms=15, label='_nolegend_')
+
+        axis[1].plot(my_iso3.points[''+my_iso3.points.keys()[9]]
+                - my_iso3.points[''+my_iso3.points.keys()[8]],
+            my_iso3.points[''+my_iso3.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso3.points[''+my_iso3.points.keys()[9]][idx3]
+             - my_iso3.points[''+my_iso3.points.keys()[8]][idx3],
+           my_iso3.points[''+my_iso3.points.keys()[8]][idx3], 'b*', ms=15, label='_nolegend_')
+
+        axis[1].plot(my_iso4.points[''+my_iso4.points.keys()[9]]
+            - my_iso4.points[''+my_iso4.points.keys()[8]],
+            my_iso4.points[''+my_iso4.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso4.points[''+my_iso4.points.keys()[9]][idx4]
+            - my_iso4.points[''+my_iso4.points.keys()[8]][idx4],
+           my_iso4.points[''+my_iso4.points.keys()[8]][idx4], 'b*', ms=15, label='_nolegend_')
+
+        axis[1].plot(my_iso5.points[''+my_iso5.points.keys()[9]]
+                - my_iso5.points[''+my_iso5.points.keys()[8]],
+            my_iso5.points[''+my_iso5.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso5.points[''+my_iso5.points.keys()[9]][idx5]
+                - my_iso5.points[''+my_iso5.points.keys()[8]][idx5],
+           my_iso5.points[''+my_iso5.points.keys()[8]][idx5], 'b*', ms=15, label='_nolegend_')
+            
+        k = kde.gaussian_kde([arr_diff, m2_match])
+        xi, yi = np.mgrid[min(arr_diff):max(arr_diff):nbins*1j,
+                              min(m2_match):max(m2_match):nbins*1j]
+        zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+    
+        axis[1].pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
+        axis[1].invert_yaxis()
+        
+        #--------------------------------------------------------------#
+    
+        file_name = self.catalog1_name + self.catalog2_name
+        plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/isochrones/isochrone_cmd_{file_name}.png")
+
+        
 
 
 
-df = pd.read_csv("catalogs/catalog115w.csv", delimiter = ",")
-df2 = pd.read_csv("catalogs/catalog212n.csv", delimiter = ",")
+df3 = pd.read_csv("catalogs/catalog323n.csv", delimiter = ",")
+df4 = pd.read_csv("catalogs/catalog444w.csv", delimiter = ",")
+
+
+spisea2 = SPISEA_CMD(df3, df4, "jwst_323n", "jwst_405n", dr_tol = 15, dm_tol = 15,
+                   y_axis_m1 = True)
+
+#idxs3, idxs4, dr2, dm2, m3, m4, m3_err, m4_err = spisea2.match()
+
+#m3_match, m4_match = spisea2.cmd(idxs3, idxs4, m3, m4)
+
+spisea2.extinction_vector(np.log(10**9), 2, 1.5, 8000, -0.3, ['jwst,F323N', 'jwst,F405N'],
+                    "/Users/devaldeliwala/research/jwst_extinction/media/isochrones")
 
 #---------------------------------------------------#
 
-cmd = SPISEA_CMD(df, df2, "jwst_115w", "jwst_212n", dr_tol = 15, dm_tol = 15,
-                   y_axis_m1 = True)
-
-cmd.theoretical_iso(np.log(10**9), 2, 8000, -0.3, ['jwst,F212N', 'jwst,F115W'],
-                    "/Users/devaldeliwala/research/jwst_extinction/media/isochrones")
