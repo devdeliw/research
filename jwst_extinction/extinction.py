@@ -720,3 +720,5 @@ class RC_stars:
         
         file_name = str(catalog1_name) + "_" + str(catalog2_name) + "_RCbar" 
         fig.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/{file_name!r}.png")
+
+        return
