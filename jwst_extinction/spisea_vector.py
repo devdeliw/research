@@ -465,15 +465,5 @@ class SPISEA_CMD:
 
 
 
-df3 = pd.read_csv("catalogs/catalog323n.csv", delimiter = ",")
-df4 = pd.read_csv("catalogs/catalog444w.csv", delimiter = ",")
-
-
-spisea2 = SPISEA_CMD(df3, df4, "jwst_323n", "jwst_405n", dr_tol = 15, dm_tol = 15,
-                   y_axis_m1 = True)
-
-spisea2.extinction_vector(np.log(10**9), 2, 1.5, 8000, -0.3, ['jwst,F323N', 'jwst,F405N'],
-                    "/Users/devaldeliwala/research/jwst_extinction/media/")
-
 
 
