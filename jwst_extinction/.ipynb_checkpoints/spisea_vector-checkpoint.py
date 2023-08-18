@@ -247,7 +247,7 @@ class SPISEA_CMD:
                                     evo_model=evo_model, atm_func=atm_func,
                                     red_law=red_law, filters=filt_list,
                                     iso_dir=iso_dir)
-        
+
         my_iso2 = synthetic.IsochronePhot(logAge, AKs2, dist, metallicity,
                                     evo_model=evo_model, atm_func=atm_func,
                                     red_law=red_law, filters=filt_list,
@@ -274,7 +274,7 @@ class SPISEA_CMD:
         dfy.to_csv(f"spisea_iso{file_name}.csv")
 
         print('The columns in the isochrone table are: {0}'.format(my_iso.points.keys()))
-        
+        """
         idx = np.where( abs(my_iso.points['mass'] - 1.0) == min(abs(my_iso.points['mass'] - 1.0)) )[0]
         filter_1 = np.round(my_iso.points[idx[0]][''+my_iso.points.keys()[9]], decimals=3)
         filter_2 = np.round(my_iso.points[idx[0]][''+my_iso.points.keys()[8]], decimals=3)
@@ -330,24 +330,24 @@ class SPISEA_CMD:
         # Plotting Synthetic Isochrones
         fig, axis = plt.subplots(2,1, figsize = (20,20))
 
-        axis[0].plot(clust[''+my_iso.points.keys()[8]]
-                     - clust[''+my_iso.points.keys()[9]], 
-                     clust[''+my_iso.points.keys()[8]], 'k.', ms=5, alpha=0.1, label='__nolegend__')
-        axis[0].plot(iso[''+my_iso.points.keys()[8]]
-                     - iso[''+my_iso.points.keys()[9]],
-                     iso[''+my_iso.points.keys()[8]],
+        axis[0].plot(clust[''+my_iso.points.keys()[9]]
+                     - clust[''+my_iso.points.keys()[8]], 
+                     clust[''+my_iso.points.keys()[9]], 'k.', ms=5, alpha=0.1, label='__nolegend__')
+        axis[0].plot(iso[''+my_iso.points.keys()[9]]
+                     - iso[''+my_iso.points.keys()[8]],
+                     iso[''+my_iso.points.keys()[9]],
                'r-', label='Isochrone')
         axis[0].set_xlabel(self.catalog1_name + " - " + self.catalog2_name)
         axis[0].set_ylabel(self.catalog1_name)
         axis[0].invert_yaxis()
         axis[0].legend()
 
-        axis[1].plot(clust[''+my_iso.points.keys()[8]]
-                     - clust[''+my_iso.points.keys()[9]],
-                     clust[''+my_iso.points.keys()[9]], 'k.', ms=5, alpha=0.1, label='__nolegend__')
-        axis[1].plot(iso[''+my_iso.points.keys()[8]]
-                     - iso[''+my_iso.points.keys()[9]],
-                     iso[''+my_iso.points.keys()[9]],
+        axis[1].plot(clust[''+my_iso.points.keys()[9]]
+                     - clust[''+my_iso.points.keys()[8]],
+                     clust[''+my_iso.points.keys()[8]], 'k.', ms=5, alpha=0.1, label='__nolegend__')
+        axis[1].plot(iso[''+my_iso.points.keys()[9]]
+                     - iso[''+my_iso.points.keys()[8]],
+                     iso[''+my_iso.points.keys()[8]],
                'r-', label='Isochrone')
         axis[1].set_xlabel(self.catalog1_name + " - " + self.catalog2_name)
         axis[1].set_ylabel(self.catalog2_name)
@@ -366,42 +366,41 @@ class SPISEA_CMD:
         arr_diff = np.subtract(m1_match, m2_match)
         
         fig, axis = plt.subplots(2, 1, figsize = (20,20))
-        print(my_iso.points.keys()[8])
-        
-        axis[0].plot(my_iso.points[''+my_iso.points.keys()[8]]
-                - my_iso.points[''+my_iso.points.keys()[9]], 
-            my_iso.points[''+my_iso.points.keys()[8]], 'r-', label='_nolegend_')
-        axis[0].plot(my_iso.points[''+my_iso.points.keys()[8]][idx]
-                - my_iso.points[''+my_iso.points.keys()[9]][idx], 
-           my_iso.points[''+my_iso.points.keys()[8]][idx], 'b*', ms=15, label='1 $M_\odot$')
 
-        axis[0].plot(my_iso2.points[''+my_iso2.points.keys()[8]]
-                - my_iso2.points[''+my_iso2.points.keys()[9]], 
-            my_iso2.points[''+my_iso2.points.keys()[8]], 'r-', label='_nolegend_')
-        axis[0].plot(my_iso2.points[''+my_iso2.points.keys()[8]][idx2]
-                - my_iso2.points[''+my_iso2.points.keys()[9]][idx2], 
-           my_iso2.points[''+my_iso2.points.keys()[8]][idx2], 'b*', ms=15, label='_nolegend_')
+        axis[0].plot(my_iso.points[''+my_iso.points.keys()[9]]
+                - my_iso.points[''+my_iso.points.keys()[8]], 
+            my_iso.points[''+my_iso.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso.points[''+my_iso.points.keys()[9]][idx]
+                - my_iso.points[''+my_iso.points.keys()[8]][idx], 
+           my_iso.points[''+my_iso.points.keys()[9]][idx], 'b*', ms=15, label='1 $M_\odot$')
 
-        axis[0].plot(my_iso3.points[''+my_iso3.points.keys()[8]]
-                - my_iso3.points[''+my_iso3.points.keys()[9]], 
-            my_iso3.points[''+my_iso3.points.keys()[8]], 'r-', label='_nolegend_')
-        axis[0].plot(my_iso3.points[''+my_iso3.points.keys()[8]][idx3]
-             - my_iso3.points[''+my_iso3.points.keys()[9]][idx3], 
-           my_iso3.points[''+my_iso3.points.keys()[8]][idx3], 'b*', ms=15, label='_nolegend_')
+        axis[0].plot(my_iso2.points[''+my_iso2.points.keys()[9]]
+                - my_iso2.points[''+my_iso2.points.keys()[8]], 
+            my_iso2.points[''+my_iso2.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso2.points[''+my_iso2.points.keys()[9]][idx2]
+                - my_iso2.points[''+my_iso2.points.keys()[8]][idx2], 
+           my_iso2.points[''+my_iso2.points.keys()[9]][idx2], 'b*', ms=15, label='_nolegend_')
 
-        axis[0].plot(my_iso4.points[''+my_iso4.points.keys()[8]]
-            - my_iso4.points[''+my_iso4.points.keys()[9]], 
-            my_iso4.points[''+my_iso4.points.keys()[8]], 'r-', label='_nolegend_')
-        axis[0].plot(my_iso4.points[''+my_iso4.points.keys()[8]][idx4]
-            - my_iso4.points[''+my_iso4.points.keys()[9]][idx4], 
-           my_iso4.points[''+my_iso4.points.keys()[8]][idx4], 'b*', ms=15, label='_nolegend_')
+        axis[0].plot(my_iso3.points[''+my_iso3.points.keys()[9]]
+                - my_iso3.points[''+my_iso3.points.keys()[8]], 
+            my_iso3.points[''+my_iso3.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso3.points[''+my_iso3.points.keys()[9]][idx3]
+             - my_iso3.points[''+my_iso3.points.keys()[8]][idx3], 
+           my_iso3.points[''+my_iso3.points.keys()[9]][idx3], 'b*', ms=15, label='_nolegend_')
 
-        axis[0].plot(my_iso5.points[''+my_iso5.points.keys()[8]]
-                - my_iso5.points[''+my_iso5.points.keys()[9]], 
-            my_iso5.points[''+my_iso5.points.keys()[8]], 'r-', label='_nolegend_')
-        axis[0].plot(my_iso5.points[''+my_iso5.points.keys()[8]][idx5]
-                - my_iso5.points[''+my_iso5.points.keys()[9]][idx5], 
-           my_iso5.points[''+my_iso5.points.keys()[8]][idx5], 'b*', ms=15, label='_nolegend_')
+        axis[0].plot(my_iso4.points[''+my_iso4.points.keys()[9]]
+            - my_iso4.points[''+my_iso4.points.keys()[8]], 
+            my_iso4.points[''+my_iso4.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso4.points[''+my_iso4.points.keys()[9]][idx4]
+            - my_iso4.points[''+my_iso4.points.keys()[8]][idx4], 
+           my_iso4.points[''+my_iso4.points.keys()[9]][idx4], 'b*', ms=15, label='_nolegend_')
+
+        axis[0].plot(my_iso5.points[''+my_iso5.points.keys()[9]]
+                - my_iso5.points[''+my_iso5.points.keys()[8]], 
+            my_iso5.points[''+my_iso5.points.keys()[9]], 'r-', label='_nolegend_')
+        axis[0].plot(my_iso5.points[''+my_iso5.points.keys()[9]][idx5]
+                - my_iso5.points[''+my_iso5.points.keys()[8]][idx5], 
+           my_iso5.points[''+my_iso5.points.keys()[9]][idx5], 'b*', ms=15, label='_nolegend_')
 
         nbins=600
         k = kde.gaussian_kde([arr_diff, m1_match])
@@ -414,40 +413,40 @@ class SPISEA_CMD:
 
         #----------------------------------------------------#
 
-        axis[1].plot(my_iso.points[''+my_iso.points.keys()[8]]
-                - my_iso.points[''+my_iso.points.keys()[9]],
-            my_iso.points[''+my_iso.points.keys()[9]], 'r-', label='_nolegend_')
-        axis[1].plot(my_iso.points[''+my_iso.points.keys()[8]][idx]
-                - my_iso.points[''+my_iso.points.keys()[9]][idx],
-           my_iso.points[''+my_iso.points.keys()[9]][idx], 'b*', ms=15, label='1 $M_\odot$')
+        axis[1].plot(my_iso.points[''+my_iso.points.keys()[9]]
+                - my_iso.points[''+my_iso.points.keys()[8]],
+            my_iso.points[''+my_iso.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso.points[''+my_iso.points.keys()[9]][idx]
+                - my_iso.points[''+my_iso.points.keys()[8]][idx],
+           my_iso.points[''+my_iso.points.keys()[8]][idx], 'b*', ms=15, label='1 $M_\odot$')
 
-        axis[1].plot(my_iso2.points[''+my_iso2.points.keys()[8]]
-                - my_iso2.points[''+my_iso2.points.keys()[9]],
-            my_iso2.points[''+my_iso2.points.keys()[9]], 'r-', label='_nolegend_')
-        axis[1].plot(my_iso2.points[''+my_iso2.points.keys()[8]][idx2]
-                - my_iso2.points[''+my_iso2.points.keys()[9]][idx2],
-           my_iso2.points[''+my_iso2.points.keys()[9]][idx2], 'b*', ms=15, label='_nolegend_')
+        axis[1].plot(my_iso2.points[''+my_iso2.points.keys()[9]]
+                - my_iso2.points[''+my_iso2.points.keys()[8]],
+            my_iso2.points[''+my_iso2.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso2.points[''+my_iso2.points.keys()[9]][idx2]
+                - my_iso2.points[''+my_iso2.points.keys()[8]][idx2],
+           my_iso2.points[''+my_iso2.points.keys()[8]][idx2], 'b*', ms=15, label='_nolegend_')
 
-        axis[1].plot(my_iso3.points[''+my_iso3.points.keys()[8]]
-                - my_iso3.points[''+my_iso3.points.keys()[9]],
-            my_iso3.points[''+my_iso3.points.keys()[9]], 'r-', label='_nolegend_')
-        axis[1].plot(my_iso3.points[''+my_iso3.points.keys()[8]][idx3]
-             - my_iso3.points[''+my_iso3.points.keys()[9]][idx3],
-           my_iso3.points[''+my_iso3.points.keys()[9]][idx3], 'b*', ms=15, label='_nolegend_')
+        axis[1].plot(my_iso3.points[''+my_iso3.points.keys()[9]]
+                - my_iso3.points[''+my_iso3.points.keys()[8]],
+            my_iso3.points[''+my_iso3.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso3.points[''+my_iso3.points.keys()[9]][idx3]
+             - my_iso3.points[''+my_iso3.points.keys()[8]][idx3],
+           my_iso3.points[''+my_iso3.points.keys()[8]][idx3], 'b*', ms=15, label='_nolegend_')
 
-        axis[1].plot(my_iso4.points[''+my_iso4.points.keys()[8]]
-            - my_iso4.points[''+my_iso4.points.keys()[9]],
-            my_iso4.points[''+my_iso4.points.keys()[9]], 'r-', label='_nolegend_')
-        axis[1].plot(my_iso4.points[''+my_iso4.points.keys()[8]][idx4]
-            - my_iso4.points[''+my_iso4.points.keys()[9]][idx4],
-           my_iso4.points[''+my_iso4.points.keys()[9]][idx4], 'b*', ms=15, label='_nolegend_')
+        axis[1].plot(my_iso4.points[''+my_iso4.points.keys()[9]]
+            - my_iso4.points[''+my_iso4.points.keys()[8]],
+            my_iso4.points[''+my_iso4.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso4.points[''+my_iso4.points.keys()[9]][idx4]
+            - my_iso4.points[''+my_iso4.points.keys()[8]][idx4],
+           my_iso4.points[''+my_iso4.points.keys()[8]][idx4], 'b*', ms=15, label='_nolegend_')
 
-        axis[1].plot(my_iso5.points[''+my_iso5.points.keys()[8]]
-                - my_iso5.points[''+my_iso5.points.keys()[9]],
-            my_iso5.points[''+my_iso5.points.keys()[9]], 'r-', label='_nolegend_')
-        axis[1].plot(my_iso5.points[''+my_iso5.points.keys()[8]][idx5]
-                - my_iso5.points[''+my_iso5.points.keys()[9]][idx5],
-           my_iso5.points[''+my_iso5.points.keys()[9]][idx5], 'b*', ms=15, label='_nolegend_')
+        axis[1].plot(my_iso5.points[''+my_iso5.points.keys()[9]]
+                - my_iso5.points[''+my_iso5.points.keys()[8]],
+            my_iso5.points[''+my_iso5.points.keys()[8]], 'r-', label='_nolegend_')
+        axis[1].plot(my_iso5.points[''+my_iso5.points.keys()[9]][idx5]
+                - my_iso5.points[''+my_iso5.points.keys()[8]][idx5],
+           my_iso5.points[''+my_iso5.points.keys()[8]][idx5], 'b*', ms=15, label='_nolegend_')
             
         k = kde.gaussian_kde([arr_diff, m2_match])
         xi, yi = np.mgrid[min(arr_diff):max(arr_diff):nbins*1j,
@@ -462,7 +461,7 @@ class SPISEA_CMD:
         file_name = self.catalog1_name + self.catalog2_name
         plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/isochrones/isochrone_cmd_{file_name}.png")
         return 
-
+"""
 
 
 df3 = pd.read_csv("catalogs/catalog323n.csv", delimiter = ",")
@@ -472,8 +471,8 @@ df4 = pd.read_csv("catalogs/catalog444w.csv", delimiter = ",")
 spisea2 = SPISEA_CMD(df3, df4, "jwst_323n", "jwst_405n", dr_tol = 15, dm_tol = 15,
                    y_axis_m1 = True)
 
-spisea2.extinction_vector(np.log(10**9), 2, 1.5, 8000, -0.3, ['jwst,F323N', 'jwst,F405N'],
-                    "/Users/devaldeliwala/research/jwst_extinction/media/")
+spisea2.extinction_vector(np.log(10**9), 2, 1.5, 8000, -0.3, ['j', 'jwst,F212N'],
+                    "/Users/devaldeliwala/research/jwst_extinction/media/isochrones")
 
 
 
