@@ -70,6 +70,7 @@ m3_match, m4_match = spisea2.cmd(idxs3, idxs4, m3, m4)
 spisea2.extinction_vector(np.log(10**9), 2, 1.5, 8000, -0.3, ['jwst,F323N', 'jwst,F405N'],
                      "/Users/devaldeliwala/research/jwst_extinction/media/isochrones")
 
+
 #------------------------------------------------------------------------------------#
 
 

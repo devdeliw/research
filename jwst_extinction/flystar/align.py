@@ -1096,7 +1096,7 @@ class MosaicSelfRef(object):
         ref_table = copy.deepcopy(self.ref_table)
         n_epochs = len(ref_table['x'][0])
         t_arr = ref_table['t'][np.where(ref_table['n_detect'] == np.max(ref_table['n_detect']))[0][0]]
-        t0_arr = ref_table['t0']
+        t0_arr = ref_table['t']
 
         # Identify reference stars. If desired, trim ref_table to only stars to only
         # reference stars and those that pass boot_epochs_min criteria
