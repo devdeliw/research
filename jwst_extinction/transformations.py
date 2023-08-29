@@ -47,6 +47,7 @@ for i in range(len(stars_table)):
             math.isnan(stars_table[i]['x'][3]) != True
         ): 
         match115405.append(i)
+
 for i in range(len(stars_table)):
     if  (
             math.isnan(stars_table[i]['x'][0]) != True and 
@@ -54,6 +55,7 @@ for i in range(len(stars_table)):
             math.isnan(stars_table[i]['x'][1]) != True
         ): 
         match115405_212.append(i)
+
 for i in range(len(stars_table)):
     if  (
             math.isnan(stars_table[i]['x'][0]) != True and
@@ -62,10 +64,16 @@ for i in range(len(stars_table)):
         ):
         match115405_323.append(i)
 
-x115, y115, m115405, me115405, m115405212, me115405212, m115405323, me115405323 = [], [], [], [], [], [], [], []
+x115, y115, m115405, me115405 = [], [], [] , []
+m115405212, me115405212 = [], []
+m115405323, me115405323 = [], []
+
 x212, y212, m212, me212 = [], [], [], []
 x323, y323, m323, me323 = [], [], [], []
-x405, y405, m405115, me405115, m405115212, me405115212, m405115323, me405115323 = [], [], [], [], [], [], [], []
+
+x405, y405, m405115, me405115 = [], [], [], []
+m405115212, me405115212 = [], []
+m405115323, me405115323 = [], []
 
 print('Number of matched stars between F115, ----, ----, F405: ' 
       + str(len(match115405)))
