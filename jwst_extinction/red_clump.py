@@ -17,7 +17,7 @@ df3 = pd.read_csv("catalogs/catalog323n.csv", delimiter = ",")
 df4 = pd.read_csv("catalogs/catalog444w.csv", delimiter = ",")
 
 
-#------------------------------------------------------------#
+# ------------------------------------------------------------#
 
 
 cmd = Generate_CMD(df, df2, "jwst_115w", "jwst_212n", dr_tol = 15, dm_tol = 15,
@@ -34,7 +34,7 @@ idxs3, idxs4, dr2, dm2, m3, m4, m3_err, m4_err = cmd2.match()
 m3_match, m4_match = cmd2.cmd(idxs3, idxs4, m3, m4)
 
 
-#-------------------------------------------------#
+# -------------------------------------------------#
 
 rc = RC_stars(m1_match, m2_match, 1.25, 14.875, 15.275, 0.35294, 14.25, 14.4582)
 rc2 = RC_stars(m3_match, m4_match,1.1764 , 13.364705, 14.1529, 1.4285, 12.1314, 13.071)
@@ -46,7 +46,7 @@ RCcoords3, RCcoords4, idxs3, idxs4 = rc2.rc_candidates()
 rc2.ratios_extinction(RCcoords3, RCcoords4, "jwst_323n", "jwst_405n")
 
 
-#-------------------------------------------------------------------#
+# -------------------------------------------------------------------#
 
 spisea = SPISEA_CMD(df, df2, "jwst_115w", "jwst_212n", dr_tol = 15, dm_tol = 15,
                     y_axis_m1 = True)
@@ -71,6 +71,6 @@ spisea2.extinction_vector(np.log(10**9), 2, 1.5, 8000, -0.3, ['jwst,F323N', 'jws
                      "/Users/devaldeliwala/research/jwst_extinction/media/isochrones")
 
 
-#------------------------------------------------------------------------------------#
+# ------------------------------------------------------------------------------------#
 
 

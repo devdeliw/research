@@ -13,6 +13,7 @@ import warnings
 from astropy.utils.exceptions import AstropyUserWarning
 import matplotlib.pyplot as plt
 import math
+from color_mag_diagram import *
 
 df = Table.read('catalogs/catalog115j.csv')
 df2 = Table.read('catalogs/catalog212j.csv')
@@ -78,12 +79,14 @@ x405115212, x405115323, y405115212, y405115323  = [], [], [], []
 m405115212, me405115212                         = [], []
 m405115323, me405115323                         = [], []
 
+print('------------------------------------------------------------')
 print('Number of matched stars between F115, ----, ----, F405: ' 
       + str(len(match115405)))
 print('Number of matched stars between F115, F212, ----, F405: '
       + str(len(match115405_212)))
 print('Number of matched stars between F115, ----, F323, F405: '
       + str(len(match115405_323)))
+print('------------------------------------------------------------')
 
 # --------------------------------#
 
@@ -187,11 +190,26 @@ axis[2].set_ylabel('y')
 
 plt.savefig('/Users/devaldeliwala/research/jwst_extinction/media/transforms/mosaic_centroid.png')
 
-#-----------------------------------------------------------------------------------------------#
+# -----------------------------------------------------------------------------------------------#
 
+# Plotting Gaussian Mesh CMDs 
 
+color_mag_diagram(m115405, m405115, m115405, 'f115w', 'f405n', 'f115w', 100) 
+color_mag_diagram(m115405, m405115, m405115, 'f115w', 'f405n', 'f405n', 100)
+color_mag_diagram(m115405212, m405115212, m212, 'f115w', 'f405n', 'f212n', 100)
+color_mag_diagram(m115405323, m405115323, m323, 'f115w', 'f405n', 'f323n', 100)
 
+# -----------------------------------------------------------------------------#
 
+# Unsharp-masking algorithm to emphasize the Red Clump Bar
 
-
-
+"""
+unsharp_mask(m115405, m405115, m115405, me115405, me405115, me115405,
+             'jwst_f115w', 'jwst_f405n', 'jwst_f115w')
+unsharp_mask(m115405212, m405115212, m212, me115405212, me405115212, me212,
+             'jwst__f115w', 'jwst__f405n', 'jwst_f212n')
+unsharp_mask(m115405323, m405115323, m323, me115405323, me405115323, me323,
+             'jwst_f_115w', 'jwst_f_405n', 'jwst_f323n')
+unsharp_mask(m115405, m405115, m405115, me115405, me405115, me405115,
+             'jwst__f_115W', 'jwst__f_405N', 'jwst_f405n')
+"""
