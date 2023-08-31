@@ -20,7 +20,8 @@ from astropy.io import ascii
 import mpl_scatter_density
 from scipy.stats import gaussian_kde, kde
 
-def color_mag_diagram(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name, nbins):
+def color_mag_diagram_rcbar(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name,
+                      point1, point2, point3, point4, nbins):
 
     """
     Generates color-magnitude diagram (CMD) between two catalogs
@@ -50,6 +51,10 @@ def color_mag_diagram(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name, nbins
     mag_y_name  : String
         name of y axis filter
 
+    point1, point2, point3, point4 = [ , ] array
+        points that define the lines for RC Bar cutoff 
+        point1 & point 2 define one line, point3 & point4 define the other
+
     nbins       : Int
         # of bins for color mesh of CMD
 
@@ -60,6 +65,16 @@ def color_mag_diagram(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name, nbins
     xy = np.vstack([arr_diff, mag_y])
     z = gaussian_kde(xy)(xy)
 
+    # Calculating line equations for RC bar cutoff
+    
+    slope1 = (point2[1] - point1[1])/(point2[0] - point1[0])
+    slope2 = (point4[1] - point3[1])/(point4[0] - point3[0])
+
+    b1 = point2[1] - slope1 * point2[0]
+    b2 = point4[1] - slope2 * point4[0]
+
+    # Plotting CMDs w/ RC Cutoff
+
     fig, axis = plt.subplots(2, 1, figsize = (20, 20))
 
     axis[0].scatter(arr_diff, mag_y, c = z, s = 1)
@@ -68,13 +83,17 @@ def color_mag_diagram(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name, nbins
     axis[0].set_ylabel(mag_y_name)
     axis[0].set_title(mag1_name + " - " + mag2_name + " vs. " + mag_y_name)
 
+    axis[0].axline((point1[0], point1[1]), (point2[0], point2[1]), color = 'r')
+    axis[0].axline((point3[0], point3[1]), (point4[0], point4[1]), color = 'r')
+
     k = kde.gaussian_kde([arr_diff, mag_y])
     xi, yi = np.mgrid[min(arr_diff):max(arr_diff):nbins*1j,
                       min(mag_y):max(mag_y):nbins*1j]
     zi = k(np.vstack([xi.flatten(), yi.flatten()]))
     
-    print(f"Generating pcolormesh for {mag1_name} - {mag2_name} vs. {mag_y_name}")
-    print("-------------------------------------------------")
+    print(f"generating pcolormesh for {mag1_name} - {mag2_name} vs. {mag_y_name}")
+    print(f"the slope of the RC bars in the cmd {mag1_name} - {mag2_name} vs. {mag_y_name}: {slope1}")
+    print("---------------------------------------------------------------------------")
 
     axis[1].pcolormesh(xi, yi, zi.reshape(xi.shape), shading = 'auto')
     axis[1].set_xlabel(mag1_name + " - " + mag2_name)
@@ -82,14 +101,57 @@ def color_mag_diagram(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name, nbins
     axis[1].set_title(mag1_name + " - " + mag2_name + " vs. " + mag_y_name)
     axis[1].invert_yaxis()
 
-    plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/cmd_{mag1_name}_{mag2_name}_{mag_y_name}.png")
+    axis[1].axline((point1[0], point1[1]), (point2[0], point2[1]), color = 'r')
+    axis[1].axline((point3[0], point3[1]), (point4[0], point4[1]), color = 'r')
+
+    plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/cmd_RCcutoff_{mag1_name}_{mag2_name}_{mag_y_name}.png")
+
+   
+    magdiffRC, magyRC = [], []
+    coords = []
+
+    for coord_num in range(len(arr_diff)):
+        coord_pair = [arr_diff[coord_num], mag_y[coord_num]]
+        coords.append(coord_pair)
+
+    if b1 > b2: 
+        for i in range(len(coords)):
+            if coords[i][1] < slope1*(coords[i][0]) + b1 and coords[i][1] > slope2*(coords[i][0]) + b2:
+                rc_pair = [coords[i][0], coords[i][1]]
+                magdiffRC.append(rc_pair[0])
+                magyRC.append(rc_pair[1])
+    else: 
+        for i in range(len(coords)): 
+            if coords[i][1] < slope2*(coords[i][0]) + b2 and coords[i][1] > slope1*(coords[i][0]) + b1:
+                rc_pair = [coords[i][0], coords[i][1]]
+                magdiffRC.append(rc_pair[0])
+                magyRC.append(rc_pair[1])
+
+    fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+
+    plt.plot(magdiffRC, magyRC, 'k+') 
+    plt.axline((point1[0], point1[1]), (point2[0], point2[1]), color = 'r')
+    plt.axline((point3[0], point3[1]), (point4[0], point4[1]), color = 'r')
+    plt.gca().invert_yaxis()
+
+    plt.plot(np.unique(magdiffRC), np.poly1d(np.polyfit(magdiffRC, magyRC, 1))(np.unique(magdiffRC)))
+    
+    b, m = np.polyfit(magdiffRC, magyRC, 1)
+    entries = len(magdiffRC)
+
+    plt.title(f"{mag1_name} - {mag2_name} vs. {mag_y_name} RC stars | Best Fit Slope: {b} | Entries: {entries} | RC Cutoff Slope: {slope1} ")
+    plt.xlabel(f"{mag1_name} - {mag2_name}")
+    plt.ylabel(f"{mag_y_name}")
+
+    plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/RC_cutoff_{mag1_name}_{mag2_name}_{mag_y_name}")
+
 
 def unsharp_mask(mag1, mag2, magy, mag1err, mag2err, magyerr,
                  mag1_filt, mag2_filt, magy_filt,
                  magerr_lim_max = 1.5,
-                 mask_width = 0.2,
-                 binsize_mag = 0.05,
-                 binsize_clr = 0.025,
+                 mask_width = 0.3,
+                 binsize_mag = 0.1,
+                 binsize_clr = 0.1,
                  fig_dimensions = 'default',
                  hess_extent = None,
                  fig_path = "/Users/devaldeliwala/research/jwst_extinction/media/unsharp_mask/",

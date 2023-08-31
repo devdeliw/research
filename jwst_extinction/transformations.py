@@ -80,11 +80,11 @@ m405115212, me405115212                         = [], []
 m405115323, me405115323                         = [], []
 
 print('------------------------------------------------------------')
-print('Number of matched stars between F115, ----, ----, F405: ' 
+print('number of matched stars between F115, ----, ----, F405: ' 
       + str(len(match115405)))
-print('Number of matched stars between F115, F212, ----, F405: '
+print('number of matched stars between F115, F212, ----, F405: '
       + str(len(match115405_212)))
-print('Number of matched stars between F115, ----, F323, F405: '
+print('number of matched stars between F115, ----, F323, F405: '
       + str(len(match115405_323)))
 print('------------------------------------------------------------')
 
@@ -194,10 +194,17 @@ plt.savefig('/Users/devaldeliwala/research/jwst_extinction/media/transforms/mosa
 
 # Plotting Gaussian Mesh CMDs 
 
-color_mag_diagram(m115405, m405115, m115405, 'f115w', 'f405n', 'f115w', 100) 
-color_mag_diagram(m115405, m405115, m405115, 'f115w', 'f405n', 'f405n', 100)
-color_mag_diagram(m115405212, m405115212, m212, 'f115w', 'f405n', 'f212n', 100)
-color_mag_diagram(m115405323, m405115323, m323, 'f115w', 'f405n', 'f323n', 100)
+color_mag_diagram_rcbar(m115405, m405115, m115405, 'f115w', 'f405n', 'f115w',
+                        [10.35, 25.1], [9.5, 24.3], [10.35, 24.1], [9.5, 23.3], 100) 
+
+color_mag_diagram_rcbar(m115405, m405115, m405115, 'f115w', 'f405n', 'f405n',
+                        [10.35, 14.6], [9.8, 14.8], [10.35, 13.85], [9.8, 14.05], 100)
+
+color_mag_diagram_rcbar(m115405212, m405115212, m212, 'f115w', 'f405n', 'f212n', 
+                        [10, 17.7], [9, 17.6], [10, 16.8], [9, 16.7], 100)
+
+color_mag_diagram_rcbar(m115405323, m405115323, m323, 'f115w', 'f405n', 'f323n', 
+                        [10.45, 15.5], [9.85, 15.75], [10.45, 14.9], [9.85, 15.15], 100)
 
 # -----------------------------------------------------------------------------#
 
@@ -213,3 +220,6 @@ unsharp_mask(m115405323, m405115323, m323, me115405323, me405115323, me323,
 unsharp_mask(m115405, m405115, m405115, me115405, me405115, me405115,
              'jwst__f_115W', 'jwst__f_405N', 'jwst_f405n')
 """
+#--------------------------------------------------------#
+
+
