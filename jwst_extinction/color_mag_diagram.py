@@ -91,9 +91,9 @@ def color_mag_diagram_rcbar(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name,
                       min(mag_y):max(mag_y):nbins*1j]
     zi = k(np.vstack([xi.flatten(), yi.flatten()]))
     
-    print(f"generating pcolormesh for {mag1_name} - {mag2_name} vs. {mag_y_name}")
-    print(f"the slope of the RC bars in the cmd {mag1_name} - {mag2_name} vs. {mag_y_name}: {slope1}")
-    print("---------------------------------------------------------------------------")
+    print(f"Generating pcolormesh for {mag1_name} - {mag2_name} vs. {mag_y_name}")
+    print(f"The slope of the RC bars in the cmd {mag1_name} - {mag2_name} vs. {mag_y_name}: {slope1}")
+    print("-------------------------------------------------------------------------------")
 
     axis[1].pcolormesh(xi, yi, zi.reshape(xi.shape), shading = 'auto')
     axis[1].set_xlabel(mag1_name + " - " + mag2_name)
@@ -148,10 +148,10 @@ def color_mag_diagram_rcbar(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name,
 
 def unsharp_mask(mag1, mag2, magy, mag1err, mag2err, magyerr,
                  mag1_filt, mag2_filt, magy_filt,
-                 magerr_lim_max = 1.5,
-                 mask_width = 0.3,
-                 binsize_mag = 0.1,
-                 binsize_clr = 0.1,
+                 magerr_lim_max = 1.0,
+                 mask_width = 0.2,
+                 binsize_mag = 0.05,
+                 binsize_clr = 0.025,
                  fig_dimensions = 'default',
                  hess_extent = None,
                  fig_path = "/Users/devaldeliwala/research/jwst_extinction/media/unsharp_mask/",
@@ -240,9 +240,9 @@ def unsharp_mask(mag1, mag2, magy, mag1err, mag2err, magyerr,
         # Clean out stars with large photometric errors and
         # stars not found in relevant filters
         
-        print('###########################################################')
+        print('----------------------------------------------------------------------------')
         print(f"Starting Unsharp Masking Algorithm on {mag1_filt} - {mag2_filt} vs. {magy_filt}")
-        print('###########################################################')
+        print('----------------------------------------------------------------------------')
         good = np.where( (np.isfinite(mag1)) & (np.isfinite(mag2)) &
                         (mag1err <= magerr_lim_max) & (mag2err <= magerr_lim_max) &
                         (magyerr <= magerr_lim_max) &
