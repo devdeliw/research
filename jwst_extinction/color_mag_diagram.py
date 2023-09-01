@@ -81,7 +81,7 @@ def color_mag_diagram_rcbar(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name,
     axis[0].invert_yaxis()
     axis[0].set_xlabel(mag1_name + " - " + mag2_name)
     axis[0].set_ylabel(mag_y_name)
-    axis[0].set_title(mag1_name + " - " + mag2_name + " vs. " + mag_y_name)
+    axis[0].set_title(f"{mag1_name} - {mag2_name} vs. {mag_y_name} | RC cutoff slope: {slope1}")
 
     axis[0].axline((point1[0], point1[1]), (point2[0], point2[1]), color = 'r')
     axis[0].axline((point3[0], point3[1]), (point4[0], point4[1]), color = 'r')
@@ -98,7 +98,7 @@ def color_mag_diagram_rcbar(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name,
     axis[1].pcolormesh(xi, yi, zi.reshape(xi.shape), shading = 'auto')
     axis[1].set_xlabel(mag1_name + " - " + mag2_name)
     axis[1].set_ylabel(mag_y_name)
-    axis[1].set_title(mag1_name + " - " + mag2_name + " vs. " + mag_y_name)
+    axis[1].set_title(f"{mag1_name} - {mag2_name} vs. {mag_y_name} | RC cutoff slope: {slope1}")
     axis[1].invert_yaxis()
 
     axis[1].axline((point1[0], point1[1]), (point2[0], point2[1]), color = 'r')
@@ -145,13 +145,15 @@ def color_mag_diagram_rcbar(mag1, mag2, mag_y, mag1_name, mag2_name, mag_y_name,
 
     plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/RC_cutoff_{mag1_name}_{mag2_name}_{mag_y_name}")
 
+    return
+
 
 def unsharp_mask(mag1, mag2, magy, mag1err, mag2err, magyerr,
                  mag1_filt, mag2_filt, magy_filt,
                  magerr_lim_max = 1.0,
-                 mask_width = 0.2,
-                 binsize_mag = 0.05,
-                 binsize_clr = 0.025,
+                 mask_width = 0.6,
+                 binsize_mag = 0.1,
+                 binsize_clr = 0.05,
                  fig_dimensions = 'default',
                  hess_extent = None,
                  fig_path = "/Users/devaldeliwala/research/jwst_extinction/media/unsharp_mask/",
@@ -565,3 +567,83 @@ def save_hist(hist, magbins, clrbins, outName):
     _out.close()
 
     return
+
+
+def color_color_diagram(mag1, mag2, mag3, mag4, mag1_name, mag2_name,
+                        mag3_name, mag4_name, point1, point2, point3, point4, nbins): 
+    """
+    Generates color-color diagram comparing the color_excesses of two different
+    wavelength pairs
+
+    (mag1 - mag2) {x} vs. (mag3 - mag4) {y}
+
+    Parameters:
+    -----------
+
+    mag1, mag2, mag3, mag4: arrays
+        (mag1 - mag2) defines color excess 1
+        (mag3 - mag4) defines color excess 2
+
+    mag1_name, mag2_name, mag3_name, mag4_name: string
+        names of the filters
+
+    point1, point2, point3, point4: [ , ] array
+        define the points used to create the slope cutoff
+
+    nbins: int 
+        defines bins for pcolormesh
+
+    """
+
+    arr_diff1 = np.subtract(mag1, mag2)
+    arr_diff2 = np.subtract(mag3, mag4)
+
+    figure, axis = plt.subplots(2, 1, figsize = (20, 20)) 
+
+    k = kde.gaussian_kde([arr_diff1, arr_diff2])
+    xy = np.vstack([arr_diff1, arr_diff2])
+    z = gaussian_kde(xy)(xy)
+
+    axis[0].scatter(arr_diff1, arr_diff2, c = z, s = 1) 
+    axis[0].set_xlabel(mag1_name + " - " + mag2_name)
+    axis[0].set_ylabel(mag3_name + " - " + mag4_name)
+
+    slope1 = (point2[1] - point1[1])/(point2[0] - point1[0])
+    slope2 = (point4[1] - point3[1])/(point4[0] - point3[0])
+
+    axis[0].set_title(f"{mag1_name} - {mag2_name} vs. {mag3_name} - {mag4_name} | RC cutoff slope: {slope1}")
+    axis[1].set_title(f"{mag1_name} - {mag2_name} vs. {mag3_name} - {mag4_name} | RC cutoff slope: {slope1}")
+
+    b1 = point2[1] - slope1 * point2[0]
+    b2 = point4[1] - slope2 * point4[0]
+
+    xi, yi = np.mgrid[min(arr_diff1):max(arr_diff1):nbins*1j,
+                      min(arr_diff2):max(arr_diff2):nbins*1j]
+    zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+
+    print("------------------------------------------------------------------------------------------------------------")
+    print(f"Generating pcolormesh for {mag1_name} - {mag2_name} vs. {mag3_name} - {mag4_name} color-color diagram")
+    print(f"The slope of the RC bars in the color-color diagram {mag1_name} - {mag2_name} vs. {mag3_name} - {mag4_name}: {slope1}")
+    print("------------------------------------------------------------------------------------------------------------")
+
+    axis[1].pcolormesh(xi, yi, zi.reshape(xi.shape), shading = 'auto')
+    axis[1].set_title(mag1_name + " -  " + mag2_name + " vs. " + mag3_name + " - " + mag4_name)
+    axis[1].set_xlabel(mag1_name + " - " + mag2_name)
+    axis[1].set_ylabel(mag3_name + " - " + mag4_name)
+
+    axis[0].axline((point1[0], point1[1]), (point2[0], point2[1]), color = 'r')
+    axis[0].axline((point3[0], point3[1]), (point4[0], point4[1]), color = 'r')
+    axis[1].axline((point1[0], point1[1]), (point2[0], point2[1]), color = 'r')
+    axis[1].axline((point3[0], point3[1]), (point4[0], point4[1]), color = 'r')
+
+    plt.savefig(f"/Users/devaldeliwala/research/jwst_extinction/media/cmd/colorcolor_{mag1_name}{mag2_name}_{mag3_name}{mag4_name}.png")
+
+    return
+
+
+
+
+
+    
+
+
