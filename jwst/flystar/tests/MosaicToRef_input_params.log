@@ -1,0 +1,21 @@
+Parameters used for fit: 
+dr_tol = [0.1]
+dm_tol = [5]
+outlier_tol = [None]
+trans_args = [{'order': 1}]
+mag_trans = False
+mag_lim = [[13 21]
+ [13 21]
+ [13 21]]
+ref_mag_lim = None
+weights = both,std
+n_boot = 0
+boot_epochs_min = -1
+trans_input = None
+trans_class = <class 'flystar.transforms.PolyTransform'>
+calc_trans_inverse = False
+use_ref_new = False
+use_vel = False
+update_ref_orig = False
+init_guess_mode = miracle
+iter_callback = None
