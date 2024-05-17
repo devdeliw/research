@@ -1,25 +1,22 @@
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt 
-import math
-import mpl_scatter_density
 import pickle 
-import pdb
 import flystar
 import copy
 import os 
 
 from scipy.spatial import cKDTree as KDT
-from matplotlib.patches import Rectangle
 from numpy.polynomial.polynomial import polyfit
-from scipy.stats import norm, tstd
+from scipy.stats import norm, tstd, gaussian_kde, kde
 from astropy.table import * 
-from astropy.modeling import models, fitting
 from astropy.convolution import convolve, Gaussian2DKernel
 from flystar import match, transforms, plots, align, starlists
 from flystar.starlists import StarList
 from flystar.startables import StarTable
-from scipy.stats import gaussian_kde, kde
+
+#not used here
+from astropy.modeling import models, fitting
 from spisea import synthetic, evolution, atmospheres, reddening, ifmr
 from spisea.imf import imf, multiplicity
 
