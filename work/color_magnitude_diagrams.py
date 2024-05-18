@@ -172,7 +172,7 @@ class Color_Magnitude_Diagram:
 
         return idxs1, idxs2, m1_matched, m2_matched, m1_error, m2_error
 
-    def generate(self, color_by_density): 
+    def generate(self, color_by_density = False): 
 
         """
         catalog1 - catalog2 (mag) vs. catalogy (mag)
@@ -728,4 +728,4 @@ class Color_Magnitude_Diagram:
                                                         fig_path = fig_path, 
                                                         data_path = data_path)
 
-        return 
+        return
