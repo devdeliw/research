@@ -16,15 +16,19 @@ from flystar.starlists import StarList
 from flystar.startables import StarTable
 
 #not used here
+import pdb
+import pylab as py
+
 from astropy.modeling import models, fitting
 from spisea import synthetic, evolution, atmospheres, reddening, ifmr
 from spisea.imf import imf, multiplicity
 
 
-class color_magnitude_diagram: 
+
+class Color_Magnitude_Diagram: 
     def __init__(self, catalog1, catalog2, 
                 catalog1name, catalog2name, catalogyname, 
-                image_path, dr_tol = None, dm_tol = None): 
+                image_path = None, dr_tol = None, dm_tol = None): 
 
         """
         
@@ -41,8 +45,7 @@ class color_magnitude_diagram:
         ----------
         Functions: 
         ----------
-
-        # match(self, dr_tol, dm_tol) 
+        # def match(self, dr_tol, dm_tol) 
 
         Finds matching stars between catalog1 and catalog2 within a certain 
         dr_tol (radius tolerancee) and dm_tol (magnitude tolerance). 
@@ -53,7 +56,7 @@ class color_magnitude_diagram:
         No transformations are done and it is assumed both catalogs exist on 
         the same coordinate basis and magnitude system
 
-        # generate(self, color_by_density = False): 
+        # def generate(self, color_by_density = False): 
 
         Generates CMD of catalog1 - catalog2 (mag) vs. catalogy (mag). 
         Places image in image_path/
@@ -63,14 +66,14 @@ class color_magnitude_diagram:
             outputs a fully colored mask CMD as well
 
 
-        # unsharp_mask(mag1, mag2, magy, mag1err, mag2err, magyerr, 
-                       mag1_filt, mag2_filt, magy_filt, 
-                       magerr_lim_max = 1.0, mask_width = 0.6, 
-                       binsize_mag = 0.1, binsize_clr = 0.05, 
-                       fig_dimensions = 'default', hess_extent = None, 
-                       fig_path = "", data_path = "", 
-                       vmini = None, vmaxi = None, vminf = None, vmaxf = None, 
-                       recalc = True): 
+        # def unsharp_mask(mag1, mag2, magy, mag1err, mag2err, magyerr, 
+                           mag1_filt, mag2_filt, magy_filt, 
+                           magerr_lim_max = 1.0, mask_width = 0.6, 
+                           binsize_mag = 0.1, binsize_clr = 0.05, 
+                           fig_dimensions = 'default', hess_extent = None, 
+                           fig_path = "", data_path = "", 
+                           vmini = None, vmaxi = None, vminf = None, vmaxf = None, 
+                           recalc = True): 
 
         Apply the image-sharpening technique unsharp masking to
         the color-magnitude diagram (CMD) of the NSC to show the RC star
@@ -125,7 +128,6 @@ class color_magnitude_diagram:
 
         Parameters: 
         -----------
-
         dr_tol  : float
                 radius tolerance for stars to match
         
@@ -172,13 +174,16 @@ class color_magnitude_diagram:
 
     def generate(self, color_by_density): 
 
-        # catalog1 - catalog2 (mag) vs. catalogy (mag)
+        """
+        catalog1 - catalog2 (mag) vs. catalogy (mag)
 
-        #   if color_by_density == True:
-        #       makes plot color points by their density 
-        #       outputs a fully colored mask CMD as well
+        if color_by_density == True:
+            makes plot color points by their density 
+            outputs a fully colored mask CMD as well
 
-        idxs1, idxs2, m1_matched, m2_matched, m1_error, m2_error = color_magnitude_diagram.match(self)
+        """
+
+        idxs1, idxs2, m1_matched, m2_matched, m1_error, m2_error = Color_Magnitude_Diagram.match(self)
 
         m1_matched = np.array(m1_matched)
         m2_matched = np.array(m2_matched)
@@ -703,11 +708,11 @@ class color_magnitude_diagram:
 
         # Generates the unsharp masked CMD using `unsharp_mask` function
 
-        idxs1, idxs2, m1, m2, m1_error, m2_error = color_magnitude_diagram.match(self)
+        idxs1, idxs2, m1, m2, m1_error, m2_error = Color_Magnitude_Diagram.match(self)
         check = False
 
         if self.catalogyname == self.catalog1name: 
-            hess = color_magnitude_diagram.unsharp_mask(m1, m2, m1, 
+            hess = Color_Magnitude_Diagram.unsharp_mask(m1, m2, m1, 
                                                         m1_error, m2_error, m1_error, 
                                                         self.catalog1name, self.catalog2name, 
                                                         self.catalog1name, 
@@ -716,7 +721,7 @@ class color_magnitude_diagram:
             check = True
 
         if self.catalogyname == self.catalog2name: 
-            hess = color_magnitude_diagram.unsharp_mask(m1, m2, m2, 
+            hess = Color_Magnitude_Diagram.unsharp_mask(m1, m2, m2, 
                                                         m1_error, m2_error, m2_error, 
                                                         self.catalog1name, self.catalog2name, 
                                                         self.catalog2name, 
@@ -724,11 +729,3 @@ class color_magnitude_diagram:
                                                         data_path = data_path)
 
         return 
-
-
-
-
-
-
-
-
