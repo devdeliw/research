@@ -507,12 +507,16 @@ class Red_Clump_Analysis:
         if verbose: 
             print(f"{data_name}")
             print(f"Accepted Bin #s: {bins}")
-            print(" {:>13} | {:>8} | {:>11} | {:>8} |  {:>8} ".format("Optimal Bin #", 
+            print(" {:>13} | {:>8} | {:>11} | {:>8} | {:>8} ".format("Optimal Bin #", 
                                                                      "Error", 
                                                                      "Amplitude", 
                                                                      "Mean", 
                                                                      "Stddev"))
-            print(f" {optimized_bin_value:>13} | { optimized_error:>8} | {optimized_amplitude:>11} | {optimized_mean:>8} | {optimized_std:>8}")
+            print(" {:>13} | {:>8} | {:>11} | {:>8} | {:>8}".format(optimized_bin_value, 
+                                                                     optimized_error, 
+                                                                     optimized_amplitude, 
+                                                                     optimized_mean, 
+                                                                     optimized_std))
             print("")
 
         return optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std
@@ -574,7 +578,8 @@ class Red_Clump_Analysis:
                 plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
 
                 if show_hists: 
-                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', zs = min_x, zdir = 'x', ec = 'k', facecolor = (0,0,0,0))
+                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
+                            zs = min_x, zdir = 'x', ec = 'k', facecolor = (0,0,0,0))
                     plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_bins_with_histograms.png")
 
                 else: 
@@ -616,7 +621,8 @@ class Red_Clump_Analysis:
                 plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
                 
                 if show_hists: 
-                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', zs = min_x, zdir = 'x', ec = 'k', facecolor = (0,0,0,0))
+                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
+                        zs = min_x, zdir = 'x', ec = 'k', facecolor = (0,0,0,0))
                     plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_bins_with_histograms.png")
 
                 else: 
