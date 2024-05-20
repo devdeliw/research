@@ -465,7 +465,12 @@ class Red_Clump_Analysis:
 
             plt.xlabel(f'{data_name}')
             plt.ylabel('Frequency')
-            plt.title(f" Compound-Fitted Histogram | Mean = {t.mean_0.value.round(3)} | σ = {t.stddev_0.value.round(3)} | Error_on_mean = {(t.stddev_0.value / math.sqrt(len(data))).round(3)}")
+
+            mean = t.mean_0.value.round(3)
+            std = t.stddev_0.value.round(3)
+            error = (t.stddev_0.value / math.sqrt(len(data))).round(3)
+
+            plt.title(f" Compound-Fitted Histogram | Mean = {mean} | σ = {std} | Error_on_mean = {error}")
 
         bins = []
         errors = [] 
@@ -543,7 +548,8 @@ class Red_Clump_Analysis:
                 min_x = np.min(np.subtract(starlist[starlist.columns[0]][i], starlist[starlist.columns[1]][i]))
 
                 # fitting 
-                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_bin(starlist[starlist.columns[1]][i], 
+                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_bin(
+                                                                                                           starlist[starlist.columns[1]][i], 
                                                                                                            starlist.columns[1], 
                                                                                                            show_plot = False, 
                                                                                                            verbose = verbose
@@ -565,11 +571,14 @@ class Red_Clump_Analysis:
                 
                 x_interval_for_fit = np.linspace(bin_borders[0], bin_borders[-1], 10000)
                 
+                plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
+
                 if show_hists: 
                     plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', zs = min_x, zdir = 'x', ec = 'k', facecolor = (0,0,0,0))
-                
-                plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
-                plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_bins.png")
+                    plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_bins_with_histograms.png")
+
+                else: 
+                    plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_bins.png")
                     
             if self.catalogyname == self.catalog1name: 
             
@@ -581,7 +590,8 @@ class Red_Clump_Analysis:
                 min_x = np.min(np.subtract(starlist[starlist.columns[0]][i], starlist[starlist.columns[1]][i]))
 
                 # fitting 
-                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_bin(starlist[starlist.columns[0]][i], 
+                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_bin(
+                                                                                                           starlist[starlist.columns[0]][i], 
                                                                                                            starlist.columns[0], 
                                                                                                            show_plot = False, 
                                                                                                            verbose = verbose
@@ -602,12 +612,15 @@ class Red_Clump_Analysis:
                 t = fit_t(t_compound, bin_centers, bin_heights)
                 
                 x_interval_for_fit = np.linspace(bin_borders[0], bin_borders[-1], 10000)
+
+                plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
                 
                 if show_hists: 
                     plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', zs = min_x, zdir = 'x', ec = 'k', facecolor = (0,0,0,0))
-                
-                plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
-                plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_bins.png")
+                    plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_bins_with_histograms.png")
+
+                else: 
+                    plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_bins.png")
 
         return optimized_means, optimized_mean_errors
 
@@ -625,7 +638,7 @@ class Red_Clump_Analysis:
 
 
 
-"""
+
 fits ='catalogs/dr2/jwst_init_NRCB.fits'
 catalog = Table.read(fits, format='fits')
 
@@ -639,19 +652,10 @@ RC = Red_Clump_Analysis(catalog1,  catalog2,
                    catalogyname = "NRCB1 F212N", 
                    xlim = (5.8, 9.3), 
                    ylim = (14.5, 16.9), 
-                   n = 20, 
+                   n = 10, 
                    image_path = "/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/", 
                    matched = True)
 
 RC.divide_cutoff()
 RC.extract_stars(verbose = True)
-RC.generate_hists(verbose = True, show_hists = False)
-"""
-
-
-
-
-
-
-
-    
+RC.generate_hists(verbose = True, show_hists = True)
