@@ -18,8 +18,12 @@ unsharp masking, comparing to theoretical isochrones of increasing extinction,
 binning the CMD and 3D compound-fitting and much more. 
 
 `messy_jwst_exintction` and `messy_jwst` are both  previous JWST messy work, **`work` is current**.
-We are close to publications so I am compiling all my work into .py files in
-the `work` directory
 
-I heavily utilize [SPISEA](https://spisea.readthedocs.io) developed by Hosek+18 et al. to derive 
+We are close to publication so I am compiling all my work into .py files in
+the `work` directory. Within the `work` directory lies a `plots&data` folder
+which stores all image and data files corresponding to each python file. There
+is also a `flystar` directory which contains code for performing matching
+algorithms, with or without possible coordinate transformations, between two star catalogs. 
+
+I utilize [SPISEA](https://spisea.readthedocs.io) developed by Hosek+18 et al. to derive 
 theoretical synthetic isochrones for my research. 
