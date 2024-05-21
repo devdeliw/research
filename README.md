@@ -25,7 +25,7 @@ which stores all image and data files corresponding to each python file. There
 is also a `flystar` directory which contains code for performing matching
 algorithms, with or without possible coordinate transformations, between two star catalogs.
 
-##### Overview of Code in `work` 
+### Overview of Code in `work` 
 
 [color_magnitude_diagrams.py](https://github.com/devdeliw/research/blob/main/work/color_magnitude_diagrams.py) performs all operations regarding generating a CMD. If the catalogs of different wavelengths are not matched, it implements a KDTree nearest neighbor algorithm with a certain `dr_tol` and checks for matches to be within a `dm_tol`. Provides the option to generate unsharp masks (deemphasizing less dense regions and emphasizing dense regions) with a certain `binsize` and `binwidth`. It also provides the option to plot a regular CMD or generate one that plots points with color as a function of their density. See `work/plots&data/color_magnitude_diagram_plots/` and `work/plots&data/unsharp_mask/`. 
 
