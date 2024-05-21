@@ -1,5 +1,6 @@
 from color_magnitude_diagrams import * 
 from catalog_helper_functions import * 
+from scipy.stats import linregress
 from matplotlib.patches import Rectangle
 import math
 
@@ -33,7 +34,7 @@ class Red_Clump_Analysis:
 
         Default is True to see if program works correctly. 
 
-        # extract_stars(self, show_plot = True, verbose = False):
+        # def extract_stars(self, show_plot = True, verbose = False):
 
         extracts stars in each bin returned from `divide_cutoff` based on 
         a `catalog1` - `catalog2` vs. `catalogy` CMD. `catalogy` is chosen
@@ -75,13 +76,22 @@ class Red_Clump_Analysis:
 
          Returns the parameters for the optimized fit. 
 
-         # generate_hits(starlist, path, verbose = False):
+         # def generate_hits(starlist, path, verbose = False):
 
          Performs `optimize_bin` method for each bin in the RC bar established from 
          `divide_cutoff` and returns a 3D Plot of all the optimized fittings. 
 
          Returns all the means from the compound fitting, and their corresponding 
          error. 
+
+         # def determine_slope(self, show_cmd = True, verbose = True):
+
+         Determines the determined RC slope along with errors from `generate_hists`. 
+
+         if show_cmd == True: # default is True
+            overplots the CMD for `catalog1 - catalog2` vs. `catalogy`. 
+            catalogy is catalog1 if catalogyname == catalog1name, and likewise
+            for catalog2. 
 
         ------------------
          Class Parameters: 
@@ -416,7 +426,7 @@ class Red_Clump_Analysis:
                 if verbose: 
                     print(starlist)
 
-        return starlist, idxs 
+        return starlist, idxs
 
     def optimize_bin(self, data, data_name, show_plot = True, verbose = True): 
 
@@ -630,6 +640,93 @@ class Red_Clump_Analysis:
 
         return optimized_means, optimized_mean_errors
 
+    def determine_slope(self, show_cmd = True, verbose = True): 
+        optimized_means, optimized_mean_errors = self.generate_hists(verbose = False)
+        x = np.subtract(self.catalog1, self.catalog2)
+
+        segments, xbins = self.divide_cutoff(show_plot = False)
+        x_midpoints = [] 
+
+        for i in range(len(xbins)): 
+            x_midpoints.append((xbins[i][0] + xbins[i][1]) / 2)
+
+        """if self.matched: 
+            fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+            
+            check = False
+
+            if self.catalogyname == self.catalog1name:
+                plt.scatter(x, self.catalog1, c = 'k', s = 0.05)
+                plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+                plt.ylabel(f"{self.catalog1name}")
+
+                filename = f"{self.catalog1}_{self.catalog2}_{self.catalog1}_rcfit"
+                check = True
+
+            if self.catalogyname == self.catalog2name: 
+                plt.scatter(x, self.catalog2, c = 'k', s = 0.05)
+                plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+                plt.ylabel(f"{self.catalog2name}")
+
+                filename = f"{self.catalog1}_{self.catalog2}_{self.catalog2}_rcfit"
+                check = True
+
+            if not check:
+                raise Exception("catalogyname must equal catalog1name or catalog2name")"""
+
+        fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+        check = False
+
+        if self.catalogyname == self.catalog1name: 
+            plt.scatter(x, self.catalog1, c = 'k', s = 0.1, alpha = 0.8)
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+            plt.ylabel(f"{self.catalog1name}")
+
+            filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog1name}_{self.n}bins_rcfit"
+            check = True
+        if self.catalogyname == self.catalog2name: 
+            plt.scatter(x, self.catalog2, c = 'k', s = 0.1, alpha = 0.8)
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+            plt.ylabel(f"{self.catalog2name}")
+
+            filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog2name}_{self.n}bins_rcfit"
+            check = True
+
+        if not check:
+            raise Exception("catalogyname must equal catalog1name or catalog2name")
+
+        gradient, intercept, r_value, p_value, std_err = linregress(x_midpoints, optimized_means)
+
+        line_orig = models.Linear1D(slope = gradient, intercept = intercept)
+        fit = fitting.LevMarLSQFitter()
+        line_init = models.Linear1D()
+
+        fitted_line = fit(line_init, x_midpoints, optimized_means)
+
+        plt.plot(x_midpoints, line_orig(x_midpoints), 'r-', label = 'linear fit')
+        plt.scatter(x_midpoints, optimized_means, c = 'cyan', s = 10, label = 'optimized means')
+        
+        plt.legend()
+        plt.xlim(self.xlim)
+        plt.ylim(self.ylim)
+        plt.gca().invert_yaxis()
+        plt.title(f"Fitted Slope: {fitted_line.slope.value.round(3)}")
+
+        plt.savefig(f"{self.image_path}{filename}.png")
+
+        if verbose: 
+            print(f"Mean Errors For The {self.n} Segments:")
+            print(optimized_mean_errors)
+            print(f"")
+            print(fitted_line)
+
+        return fitted_line.slope.value, fitted_line.intercept.value
+
+
+
+
+
+
 
 
 
@@ -658,10 +755,11 @@ RC = Red_Clump_Analysis(catalog1,  catalog2,
                    catalogyname = "NRCB1 F212N", 
                    xlim = (5.8, 9.3), 
                    ylim = (14.5, 16.9), 
-                   n = 10, 
-                   image_path = "/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/", 
+                   n = 20, 
+                   image_path = "/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/NRCB1_vF212N/", 
                    matched = True)
 
 RC.divide_cutoff()
 RC.extract_stars(verbose = True)
 RC.generate_hists(verbose = True, show_hists = True)
+RC.determine_slope()
