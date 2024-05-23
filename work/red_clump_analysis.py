@@ -4,7 +4,7 @@ from scipy.stats import linregress
 from matplotlib.patches import Rectangle
 import math
 
-class Red_Clump_Analysis: 
+class Red_Clump_Analysis_vRect: 
     def __init__(self, catalog1, catalog2, 
                  catalog1name, catalog2name, catalogyname, 
                  xlim, ylim, n, image_path, matched = True): 
@@ -144,6 +144,7 @@ class Red_Clump_Analysis:
         self.matched = matched
 
     def divide_cutoff(self, show_plot = True, dr_tol = None, dm_tol = None):
+
         x, y = self.xlim[0], self.ylim[0]
         width = self.xlim[1] - self.xlim[0]
         dx = width / self.n 
@@ -723,9 +724,503 @@ class Red_Clump_Analysis:
         return fitted_line.slope.value, fitted_line.intercept.value
 
 
+class Red_Clump_Analysis_vRiemann:
+    def __init__(self, catalog1, catalog2, 
+                 catalog1name, catalog2name, catalogyname, 
+                 parallel_cutoff1, parallel_cutoff2, x_range, n, 
+                 image_path): 
+
+        """
+            Same as Red_Clump_Analysis_vRect except it implements 
+            a `n` numbered tiled-rectangular cutoff that follows a rough estimate of the 
+            slope of the RC-bar.
+
+            Requires two parallel lines defined by two points each along the edges of the RC bar. 
+            It expands the width of these lines by ~3 and afterwards establishes the rectangular bins. 
+
+            For use if the RC bar has a rectangular cutoff that includes the main sequence track
+            (i.e. you can not solely isolate the RC bar using a rectangle.)
+
+            Similar to vRect, performs the analysis against a catalog1 - catalog2 vs `catalogy` CMD
+            where `catalogy` is whichever catalog with the same `catalogname` as `catalogyname`
+
+            parallel_cutoff1    :  list
+            [(x1, y1), (x2, y2)] for first parallel cutoff
+
+            parallel_cutoff2    : list
+            [(x1, y1), (x2, y2)] for second parallel cutoff 
+
+            x_range             : tuple
+            (x_min, x_max) where the RC bar starts and ends on the x-axis
+            defines where the tile bins starts and ends. 
+
+            *Assumes stars are already matched and catalog1 and catalog2 are of the same size 
+
+            If stars are not matched, implement Color_Magnitude_Diagram.match() from
+            color_magnitude_diagrams.py to perform a nearest neighbor algorithms on the 
+            catalogs (provided they contain `x` and `y` centroid information for each star). 
+            This algorithm does not perform any coordinate transformations. 
+
+        """
+
+        self.catalog1 = catalog1
+        self.catalog2 = catalog2
+        self.catalog1name = catalog1name
+        self.catalog2name = catalog2name
+        self.catalogyname = catalogyname
+        self.parallel_cutoff1 = parallel_cutoff1
+        self.parallel_cutoff2 = parallel_cutoff2
+        self.x_range = x_range
+        self.n = n
+        self.image_path = image_path 
+
+    def display_cutoffs(self, verbose = False): 
+
+        fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+        plt.gca().invert_yaxis()
+
+        x = np.subtract(self.catalog1, self.catalog2)
+
+        line1 = self.parallel_cutoff1
+        line2 = self.parallel_cutoff2
+
+        slope1 = round((line1[1][1] - line1[0][1]) / (line1[1][0] - line1[0][0]), 3)
+        slope2 = round((line2[1][1] - line2[0][1]) / (line2[1][0] - line2[0][0]), 3)
+
+        intercept1 = line1[1][1] - slope1 * line1[1][0]
+        intercept2 = line2[1][1] - slope2 * line2[1][0]
+
+        height = abs(intercept2 - intercept1) # height between parallel cutoffs. 
+        height = 3 * height # increasing height 3x to select more stars outside
+
+        if intercept1 > intercept2: 
+            intercept1 += height / 3
+            intercept2 -= height / 3
+        else: 
+            intercept2 += height / 3
+            intercept1 -= height / 3
+
+        if slope1 != slope2:
+            raise Exception(f"Slopes of *parallel* cutoffs must be equal. \
+                            Slope1: {slope1} / Slope2: {slope2} ")
+
+        if self.catalogyname == self.catalog1name: 
+            plt.scatter(x, self.catalog1, c = 'k', s = 0.05)
+            filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog1name}_parallel_cutoff"
+            plt.ylabel(f"{self.catalog1name}")
+        if self.catalogyname == self.catalog2name: 
+            plt.scatter(x, self.catalog2, c = 'k', s = 0.05)
+            filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog2name}_parallel_cutoff"
+            plt.ylabel(f"{self.catalog2name}")
+        
+        plt.axline(line1[0], line1[1], c = 'r', label = 'provided rc cutoff')
+        plt.axline(line2[0], line2[1], c = 'r')
+
+        plt.axline([0, intercept1], slope = slope1, c = 'aqua', label = 'actual rc cutoff')
+        plt.axline([0, intercept2], slope = slope2, c = 'aqua',)
+
+        plt.axvline(x = self.x_range[0], c = 'r', linestyle = ':', label = 'selected x range')
+        plt.axvline(x = self.x_range[1], c = 'r', linestyle = ':')
+
+        plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+        plt.legend()
+        plt.savefig(f"{self.image_path}{filename}.png")
+
+        if verbose: 
+            print("{:>8} | {:>8}".format("Slope", "Intercept"))
+            print("{:>8} | {:>8}".format(slope1, round(intercept1, 3)))
+            print("{:>8} | {:>8}".format(slope1, round(intercept2, 3)))
+
+        if intercept1 < intercept2: 
+            return intercept1, intercept2, slope1, height
+        else: 
+            return intercept2, intercept1, slope1, height
+
+    def generate_tile_bins(self, show_plot = True, verbose = False):
+
+        intercept1, intercept2, slope, height = self.display_cutoffs()
+        dx = (self.x_range[1] - self.x_range[0]) / self.n 
+        
+        bins = []
+        segments = []
+        current_x = self.x_range[0]
+
+        for i in range(self.n): 
+            yi = slope * (current_x + i * dx) + intercept1
+            yf = slope * (current_x + i * dx) + intercept2
+
+            segments.append(Rectangle((current_x + i * dx, yi), dx, height, 
+                                      facecolor = (0, 0, 0, 0), lw = 2, 
+                                      ec = (1, 0, 0, 1)
+                            )
+            )
+
+            bins.append([[current_x + i * dx, current_x + i * dx + dx], [yi, yf]])
+        bins = np.array(bins)
+
+        if show_plot: 
+            fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+            plt.gca().invert_yaxis()
+
+            x = np.subtract(self.catalog1, self.catalog2)
+
+            if self.catalogyname == self.catalog1name: 
+                plt.scatter(x, self.catalog1, c = 'k', s = 0.05)
+                filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog1name}_{self.n}_tile_bins"
+                plt.ylabel(f"{self.catalog1name}")
+            if self.catalogyname == self.catalog2name: 
+                plt.scatter(x, self.catalog2, c = 'k', s = 0.05)
+                filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog2name}_{self.n}_tile_bins"
+                plt.ylabel(f"{self.catalog2name}")
+
+            for segment in segments: 
+                axis.add_patch(segment)
+
+            plt.axline([0, intercept1], slope = slope, c = 'aqua', label = 'actual rc cutoff')
+            plt.axline([0, intercept2], slope = slope, c = 'aqua',)
+
+            plt.axvline(x = self.x_range[0], c = 'r', linestyle = ':', label = 'selected x range')
+            plt.axvline(x = self.x_range[1], c = 'r', linestyle = ':')
+
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+            plt.legend()
+            plt.savefig(f"{self.image_path}{filename}.png")
+
+        if verbose: 
+            print(bins)
+
+        return bins, segments
+
+    def extract_tile_stars(self, show_plot = True, verbose = False): 
+
+        bins, segments = self.generate_tile_bins(show_plot = False)
+        x = np.subtract(self.catalog1, self.catalog2)
+        idxs = []
+
+        catalog1_mag = []
+        catalog2_mag = []
+
+        if self.catalogyname == self.catalog1name: 
+            y = self.catalog1
+        if self.catalogyname == self.catalog2name:
+            y = self.catalog2
+
+        for i in range(len(bins)): 
+            good = np.where( (x >= bins[i][0][0]) & (x < bins[i][0][1]) & 
+                             (y >= bins[i][1][0]) & (y < bins[i][1][1]) )
+            idxs.append([good])
+            catalog1_mag.append(self.catalog1[good])
+            catalog2_mag.append(self.catalog2[good])
+
+        if show_plot: 
+            colors = plt.cm.jet(np.linspace(0, 1, len(catalog1_mag)))
+
+            fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+            plt.gca().invert_yaxis()
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+
+            for i in range(len(catalog1_mag)):
+                if self.catalogyname == self.catalog1name: 
+                    plt.scatter(np.subtract(catalog1_mag[i], catalog2_mag[i]), 
+                                catalog1_mag[i], color = colors[i], s = 0.5)
+                    plt.ylabel(f"{self.catalog1name}")
+                    filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog1name}_{self.n}_tiled_stars"
+                if self.catalogyname == self.catalog2name: 
+                    plt.scatter(np.subtract(catalog1_mag[i], catalog2_mag[i]), 
+                                catalog2_mag[i], color = colors[i], s = 0.5)
+                    plt.ylabel(f"{self.catalog2name}")
+                    filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog2name}_{self.n}_tiled_stars"
+
+            plt.savefig(f"{self.image_path}{filename}.png")
+
+        df1 = pd.DataFrame({f'{self.catalog1name}': catalog1_mag})
+        df2 = pd.DataFrame({f'{self.catalog2name}': catalog2_mag})
+        starlist = pd.concat([df1, df2], axis = 1)
+
+        #for i in range(len(starlist)): 
+        #    starlist[i, self.catalog1name] = starlist[i, self.catalog1name][0]
+        #    starlist[i, self.catalog2name] = starlist[i, self.catalog2name][0]
+
+        if verbose: 
+            print(starlist)
+
+        return starlist, idxs 
+
+    def optimize_tile_bin(self, data, data_name, show_plot = True, verbose = True):
+
+                # find the # of bins in a histogram of `data` that minimizes the error_on_the_mean
+
+        mu, std = norm.fit(data) # preliminary mean and std using scipy.stats
+        std = tstd(data, limits = (mu - 0.4, mu + 0.4))
+        error_bin_amplitude_mean_std = [] 
+
+        for i in range(8, 20): # range is 8 to 20 bins. Any more we get noise. Any less it's not enough.
+            amplitude_works = False
+            j = 10
+            count = 0
+
+            while not amplitude_works:
+            
+                bin_heights, bin_borders = np.histogram(data, bins = i)
+                bin_widths = np.diff(bin_borders)
+                bin_centers = bin_borders[:-1] + bin_widths / 2
+        
+                t_gaussian = models.Gaussian1D(j, mu, std)
+                t_linear = models.Linear1D(100, 100)
+                t_compound = t_gaussian + t_linear
+        
+                filt_t = fitting.LevMarLSQFitter()
+                t = filt_t(t_compound, bin_centers, bin_heights)
+
+                if t.stddev_0.value > 0.1 and t.amplitude_0.value < 500 and t.amplitude_0.value > 0: # testing for if the fit works
+                    amplitude_works = True
+                    error_on_mean = t.stddev_0.value / math.sqrt(len(data))
+                    error_bin_amplitude_mean_std.append([error_on_mean, i, t.amplitude_0.value, t.mean_0.value, t.stddev_0.value])
+                
+                j += 20
+                count += 1
+                
+                if count > 5: 
+                    amplitude_works = True
+    
+        if show_plot: 
+            fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+            x_interval_for_fit = np.linspace(bin_borders[0], bin_borders[-1], 10000)
+            
+            plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram')
+            plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c='red', linestyle = 'dashed')
+            plt.legend()
+
+            plt.xlabel(f'{data_name}')
+            plt.ylabel('Frequency')
+
+            mean = t.mean_0.value.round(3)
+            std = t.stddev_0.value.round(3)
+            error = (t.stddev_0.value / math.sqrt(len(data))).round(3)
+
+            plt.title(f" Compound-Fitted Histogram | Mean = {mean} | σ = {std} | Error_on_mean = {error}")
 
 
+        bins = []
+        errors = [] 
+        amplitudes = []
+        means = []
+        stds = []
+        
+        for i in range(len(error_bin_amplitude_mean_std)): # extracting error values into its own array
+            bins.append(error_bin_amplitude_mean_std[i][1])
+            errors.append(error_bin_amplitude_mean_std[i][0])
+            amplitudes.append(error_bin_amplitude_mean_std[i][2])
+            means.append(error_bin_amplitude_mean_std[i][3])
+            stds.append(error_bin_amplitude_mean_std[i][4])
 
+        bins = np.array(bins)
+        errors = np.array(errors)
+        amplitudes = np.array(amplitudes)
+        means = np.array(means)
+        stds = np.array(stds)
+        
+        while means[np.where(errors == errors.min())] > 17: 
+            errors = np.delete(errors, np.where(errors == errors.min()))
+            means = np.delete(means, np.where(errors == errors.min()))
+
+        min_index = np.where((errors == errors.min())) # determining the # of bins with the smallest error_on_mean
+        min_index = min_index[0][0]
+
+        optimized_error = errors[min_index].round(3)
+        optimized_bin_value = bins[min_index].round(3)
+        optimized_amplitude = amplitudes[min_index].round(3)
+        optimized_mean = means[min_index].round(3)
+        optimized_std = stds[min_index].round(3)
+
+        if verbose: 
+            print(f"{data_name}")
+            print(f"Accepted Bin #s: {bins}")
+            print(" {:>13} | {:>8} | {:>11} | {:>8} | {:>8} ".format("Optimal Bin #", 
+                                                                     "Error", 
+                                                                     "Amplitude", 
+                                                                     "Mean", 
+                                                                     "Stddev"))
+            print(" {:>13} | {:>8} | {:>11} | {:>8} | {:>8}".format(optimized_bin_value, 
+                                                                     optimized_error, 
+                                                                     optimized_amplitude, 
+                                                                     optimized_mean, 
+                                                                     optimized_std))
+            print("")
+
+        return optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std
+
+    def generate_tile_hists(self, verbose = False, show_hists = False):
+
+        # if show_hists == True: 
+        #   displays the individual hists on a that make up each fitting on the 3D plot
+
+        starlist, idxs = self.extract_tile_stars(show_plot = True, verbose = verbose)
+
+        ax = plt.figure(figsize = (10, 10)).add_subplot(projection = '3d')
+        ax.view_init(elev=40, azim=-45, roll=0)
+        colors = plt.cm.jet(np.linspace(0,1,len(starlist)))
+
+        ax.set_xlabel(f"{starlist.columns[0]} - {starlist.columns[1]}")
+        ax.set_ylabel(f"{starlist.columns[1]}")
+        ax.set_zlabel("Frequency")
+        ax.zaxis.labelpad=-0.01 # <- change the value here
+
+        optimized_means = []
+        optimized_mean_errors = []
+
+        for i in range(len(starlist)): 
+
+            if self.catalogyname == self.catalog2name: 
+            
+                ax.scatter(np.subtract(starlist[starlist.columns[0]][i], starlist[starlist.columns[1]][i]), 
+                           starlist[starlist.columns[1]][i], 
+                           zs = 0, zdir = 'z', label = 'CMD', 
+                           color = colors[i], s = 0.3
+                          )
+                min_x = np.min(np.subtract(starlist[starlist.columns[0]][i], starlist[starlist.columns[1]][i]))
+
+                # fitting 
+                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_tile_bin(
+                                                                                                           starlist[starlist.columns[1]][i], 
+                                                                                                           starlist.columns[1], 
+                                                                                                           show_plot = False, 
+                                                                                                           verbose = verbose
+                )
+
+                optimized_means.append(optimized_mean)
+                optimized_mean_errors.append(optimized_error)
+
+                bin_heights, bin_borders = np.histogram(starlist[starlist.columns[1]][i], bins=optimized_bin_value)
+                bin_widths = np.diff(bin_borders)
+                bin_centers = bin_borders[:-1] + bin_widths / 2
+                
+                t_gaussian = models.Gaussian1D(optimized_amplitude, optimized_mean, optimized_std)
+                t_linear = models.Linear1D(100, 100)
+                t_compound = t_gaussian + t_linear
+                
+                fit_t = fitting.LevMarLSQFitter()
+                t = fit_t(t_compound, bin_centers, bin_heights)
+                
+                x_interval_for_fit = np.linspace(bin_borders[0], bin_borders[-1], 10000)
+                
+                ax.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
+
+                if show_hists: 
+                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
+                            zs = min_x, zdir = 'x', ec = (0, 0, 0, 0.5), facecolor = (0,0,0,0))
+                    plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_tiled_bins_with_histograms.png")
+
+                else: 
+                    plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_tiled_bins.png")
+                    
+            if self.catalogyname == self.catalog1name: 
+            
+                ax.scatter(np.subtract(starlist[starlist.columns[0]][i], starlist[starlist.columns[1]][i]), 
+                           starlist[starlist.columns[0]][i], 
+                           zs = 0, zdir = 'z', label = 'CMD', 
+                           color = colors[i], s = 0.3
+                          )
+                min_x = np.min(np.subtract(starlist[starlist.columns[0]][i], starlist[starlist.columns[1]][i]))
+
+                # fitting 
+                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_bin(
+                                                                                                           starlist[starlist.columns[0]][i], 
+                                                                                                           starlist.columns[0], 
+                                                                                                           show_plot = False, 
+                                                                                                           verbose = verbose
+                )
+
+                optimized_means.append(optimized_mean)
+                optimized_mean_errors.append(optimized_error)
+
+                bin_heights, bin_borders = np.histogram(starlist[starlist.columns[0]][i], bins=optimized_bin_value)
+                bin_widths = np.diff(bin_borders)
+                bin_centers = bin_borders[:-1] + bin_widths / 2
+                
+                t_gaussian = models.Gaussian1D(optimized_amplitude, optimized_mean, optimized_std)
+                t_linear = models.Linear1D(100, 100)
+                t_compound = t_gaussian + t_linear
+                
+                fit_t = fitting.LevMarLSQFitter()
+                t = fit_t(t_compound, bin_centers, bin_heights)
+                
+                x_interval_for_fit = np.linspace(bin_borders[0], bin_borders[-1], 10000)
+
+                plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
+                
+                if show_hists: 
+                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
+                        zs = min_x, zdir = 'x', ec = (0, 0, 0, 0.5), facecolor = (0,0,0,0))
+                    plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_tiled_bins_with_histograms.png")
+
+                else: 
+                    plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_tiled_bins.png")
+
+        return optimized_means, optimized_mean_errors
+
+    def determine_tiled_slope(self, show_cmd = True, verbose = True): 
+
+        optimized_means, optimized_mean_errors = self.generate_tile_hists(verbose = False)
+        x = np.subtract(self.catalog1, self.catalog2)
+
+        bins, segments = self.generate_tile_bins(show_plot = False)
+        x_midpoints = [] 
+
+        for i in range(len(bins)): 
+            x_midpoints.append((bins[i][0][0] + bins[i][0][1]) / 2)
+
+        fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+        check = False
+
+        if self.catalogyname == self.catalog1name: 
+            plt.scatter(x, self.catalog1, c = 'k', s = 0.1, alpha = 0.8)
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+            plt.ylabel(f"{self.catalog1name}")
+
+            filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog1name}_{self.n}_tiled_bins_rcfit"
+            check = True
+        if self.catalogyname == self.catalog2name: 
+            plt.scatter(x, self.catalog2, c = 'k', s = 0.1, alpha = 0.8)
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+            plt.ylabel(f"{self.catalog2name}")
+
+            filename = f"{self.catalog1name}_{self.catalog2name}_{self.catalog2name}_{self.n}_tiled_bins_rcfit"
+            check = True
+
+        if not check:
+            raise Exception("catalogyname must equal catalog1name or catalog2name")
+
+        gradient, intercept, r_value, p_value, std_err = linregress(x_midpoints, optimized_means)
+
+        line_orig = models.Linear1D(slope = gradient, intercept = intercept)
+        fit = fitting.LevMarLSQFitter()
+        line_init = models.Linear1D()
+
+        fitted_line = fit(line_init, x_midpoints, optimized_means)
+
+        plt.plot(x_midpoints, line_orig(x_midpoints), 'r-', label = 'linear fit')
+        plt.scatter(x_midpoints, optimized_means, c = 'cyan', s = 20, marker = 'x', label = 'optimized means')
+        
+        plt.legend()
+        plt.gca().invert_yaxis()
+        plt.title(f"Fitted Slope: {fitted_line.slope.value.round(3)}")
+        
+        #plt.xlim(self.x_range[0], self.x_range[1])
+        #plt.ylim(bins[self.n-1][1][1], bins[0][1][0])
+
+        #plt.axline(self.parallel_cutoff1[0], self.parallel_cutoff1[1], c = 'r', label = 'provided rc cutoff', alpha = 0.5)
+        #plt.axline(self.parallel_cutoff2[0], self.parallel_cutoff2[1], c = 'r', alpha = 0.5)
+
+        plt.savefig(f"{self.image_path}{filename}.png")
+
+        if verbose: 
+            print(f"Mean Errors For The {self.n} Segments:")
+            print(optimized_mean_errors)
+            print(f"")
+            print(fitted_line)
+
+        return fitted_line.slope.value, fitted_line.intercept.value
 
 
 
@@ -749,7 +1244,7 @@ catalog1, catalog2, N1_f115w_vf212n_me, N1_f212n_vf115w_me = get_matches(catalog
 catalog1 += 25.92
 catalog2 += 22.12
 
-RC = Red_Clump_Analysis(catalog1,  catalog2, 
+"""RC = Red_Clump_Analysis_vRect(catalog1,  catalog2, 
                    catalog1name = "NRCB1 F115W", 
                    catalog2name = "NRCB1 F212N", 
                    catalogyname = "NRCB1 F212N", 
@@ -762,4 +1257,18 @@ RC = Red_Clump_Analysis(catalog1,  catalog2,
 RC.divide_cutoff()
 RC.extract_stars(verbose = True)
 RC.generate_hists(verbose = True, show_hists = True)
-RC.determine_slope()
+RC.determine_slope()"""
+
+RC = Red_Clump_Analysis_vRiemann(catalog1, catalog2, 
+                                catalog1name = "NRCB1 F115W", 
+                                catalog2name = "NRCB1 F212N", 
+                                catalogyname = "NRCB1 F212N", 
+                                parallel_cutoff1 = [(6.2, 15.4), (7.9, 16.2)], 
+                                parallel_cutoff2 = [(6.65, 15.3), (8.35, 16.1)], 
+                                x_range = [5, 9.2],
+                                n = 20,
+                                image_path = "/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/NRCB1_vF212N/vRiemann/")
+RC.display_cutoffs(verbose = True)
+RC.generate_tile_bins()
+RC.generate_tile_hists(verbose = True, show_hists = True)
+RC.determine_tiled_slope(show_cmd = True)
