@@ -44,8 +44,10 @@ slope of the stars within the cutoff accordingly. This of course is to
 a degree, dependent on one's eye, and errors are hard to quantify using this methodology. 
 
 This code attempts to determine the slope of the RC cluster without any
-dependency on RC cutoffs by-eye. Rather, only a rough rectangular cutoff
-*surrounding* the RC bar is required. It afterwards segments the rectangular
+dependency on RC cutoffs by-eye.
+
+The first class requires only a rough rectangular cutoff
+*surrounding* the RC bar. It afterwards segments the rectangular
 cutoff of the CMD into a user-specified `n` number of segments. It generates
 histograms for each segment a
 nd performs a compound fit between an
@@ -66,6 +68,18 @@ overlays a linear fit across these mean mag values on top of the CMD from which
 these values were derived. If all goes well, you should get a fitted slope that
 lines up relatively with the RC slope along with a quantified error for the mag
 values of the slope! See `work/plots&data/rc_analysis_plots/`.
+
+The second class is similar, but a bit more accurate. Made especially for CMDs who's
+RC bar can not solely be extracted with a rectangular cutoff (see
+`work/plots&data/color_magnitude_diagram_plots/NRCB1 F115W-NRCB1 F212N_NRCB1
+F115W_density.png`). It only requires two parallel lines that *roughly* define
+the RC bar by the upper and lower edges. It afterwards implements a left-riemann cutoff by
+generating `n` tiled-diagonal bins. 
+
+It afterwards performs the rest of the same procedure as the first
+class -- optimized compound fitting. 
+As this method includes less excess stars that are **not** in the RC bar
+it proves to be slightly more accurate.
 
 I utilize [SPISEA](https://spisea.readthedocs.io) developed by Hosek+18 et al. to derive 
 theoretical synthetic isochrones for my research. 
