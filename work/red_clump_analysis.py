@@ -1,4 +1,5 @@
 from color_magnitude_diagrams import * 
+from isochrones import * 
 from catalog_helper_functions import * 
 from scipy.stats import linregress
 from matplotlib.patches import Rectangle
@@ -827,9 +828,9 @@ class Red_Clump_Analysis_vRiemann:
         plt.savefig(f"{self.image_path}{filename}.png")
 
         if verbose: 
-            print("{:>8} | {:>8}".format("Slope", "Intercept"))
-            print("{:>8} | {:>8}".format(slope1, round(intercept1, 3)))
-            print("{:>8} | {:>8}".format(slope1, round(intercept2, 3)))
+            print("{:>15} | {:>15}".format("Cutoff Slope", "Cutoff Intercept"))
+            print("{:>15} | {:>15}".format(slope1, round(intercept1, 3)))
+            print("{:>15} | {:>15}".format(slope1, round(intercept2, 3)))
 
         if intercept1 < intercept2: 
             return intercept1, intercept2, slope1, height
@@ -946,6 +947,25 @@ class Red_Clump_Analysis_vRiemann:
 
         return starlist, idxs 
 
+    def find_max_mag(self): 
+        starlist, idxs = self.extract_tile_stars(show_plot = False) 
+
+        max_mag = 0
+
+        if self.catalogyname == self.catalog1name: 
+            for i in range(len(starlist)):
+                for j in starlist[starlist.columns[0]][i]: 
+                   
+                    if j > max_mag: 
+                        max_mag = j
+        
+        if self.catalogyname == self.catalog2name: 
+            for i in range(len(starlist)):
+                for j in starlist[starlist.columns[1]][i]: 
+                    if j > max_mag: 
+                        max_mag = j
+        return max_mag
+
     def optimize_tile_bin(self, data, data_name, show_plot = True, verbose = True):
 
                 # find the # of bins in a histogram of `data` that minimizes the error_on_the_mean
@@ -953,6 +973,8 @@ class Red_Clump_Analysis_vRiemann:
         mu, std = norm.fit(data) # preliminary mean and std using scipy.stats
         std = tstd(data, limits = (mu - 0.4, mu + 0.4))
         error_bin_amplitude_mean_std = [] 
+
+        max_mag = self.find_max_mag()
 
         for i in range(8, 20): # range is 8 to 20 bins. Any more we get noise. Any less it's not enough.
             amplitude_works = False
@@ -986,7 +1008,7 @@ class Red_Clump_Analysis_vRiemann:
         if show_plot: 
             fig, axis = plt.subplots(1, 1, figsize = (20, 10))
             x_interval_for_fit = np.linspace(bin_borders[0], bin_borders[-1], 10000)
-            
+
             plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram')
             plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c='red', linestyle = 'dashed')
             plt.legend()
@@ -999,6 +1021,7 @@ class Red_Clump_Analysis_vRiemann:
             error = (t.stddev_0.value / math.sqrt(len(data))).round(3)
 
             plt.title(f" Compound-Fitted Histogram | Mean = {mean} | σ = {std} | Error_on_mean = {error}")
+            plt.show()
 
 
         bins = []
@@ -1020,7 +1043,8 @@ class Red_Clump_Analysis_vRiemann:
         means = np.array(means)
         stds = np.array(stds)
         
-        while means[np.where(errors == errors.min())] > 17: 
+     
+        while means[np.where(errors == errors.min())] > max_mag:
             errors = np.delete(errors, np.where(errors == errors.min()))
             means = np.delete(means, np.where(errors == errors.min()))
 
@@ -1055,14 +1079,19 @@ class Red_Clump_Analysis_vRiemann:
         # if show_hists == True: 
         #   displays the individual hists on a that make up each fitting on the 3D plot
 
-        starlist, idxs = self.extract_tile_stars(show_plot = True, verbose = verbose)
-
         ax = plt.figure(figsize = (10, 10)).add_subplot(projection = '3d')
         ax.view_init(elev=40, azim=-45, roll=0)
+
+        starlist, idxs = self.extract_tile_stars(show_plot = True, verbose = verbose)
         colors = plt.cm.jet(np.linspace(0,1,len(starlist)))
 
         ax.set_xlabel(f"{starlist.columns[0]} - {starlist.columns[1]}")
-        ax.set_ylabel(f"{starlist.columns[1]}")
+
+        if self.catalogyname == self.catalog1name: 
+            ax.set_ylabel(f"{starlist.columns[0]}")
+        if self.catalogyname == self.catalog2name: 
+            ax.set_ylabel(f"{starlist.columns[1]}")
+
         ax.set_zlabel("Frequency")
         ax.zaxis.labelpad=-0.01 # <- change the value here
 
@@ -1107,12 +1136,12 @@ class Red_Clump_Analysis_vRiemann:
                 ax.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
 
                 if show_hists: 
-                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
+                    ax.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
                             zs = min_x, zdir = 'x', ec = (0, 0, 0, 0.5), facecolor = (0,0,0,0))
-                    plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_tiled_bins_with_histograms.png")
+                    ax.figure.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_tiled_bins_with_histograms.png")
 
                 else: 
-                    plt.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_tiled_bins.png")
+                    ax.figure.savefig(f"{self.image_path}{starlist.columns[1]}_optimized_with_{len(starlist)}_tiled_bins.png")
                     
             if self.catalogyname == self.catalog1name: 
             
@@ -1121,16 +1150,18 @@ class Red_Clump_Analysis_vRiemann:
                            zs = 0, zdir = 'z', label = 'CMD', 
                            color = colors[i], s = 0.3
                           )
+
+
                 min_x = np.min(np.subtract(starlist[starlist.columns[0]][i], starlist[starlist.columns[1]][i]))
 
                 # fitting 
-                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_bin(
+                optimized_bin_value, optimized_amplitude, optimized_mean, optimized_error, optimized_std = self.optimize_tile_bin(
                                                                                                            starlist[starlist.columns[0]][i], 
                                                                                                            starlist.columns[0], 
                                                                                                            show_plot = False, 
                                                                                                            verbose = verbose
                 )
-
+              
                 optimized_means.append(optimized_mean)
                 optimized_mean_errors.append(optimized_error)
 
@@ -1147,15 +1178,15 @@ class Red_Clump_Analysis_vRiemann:
                 
                 x_interval_for_fit = np.linspace(bin_borders[0], bin_borders[-1], 10000)
 
-                plt.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
-                
+                ax.plot(x_interval_for_fit, t(x_interval_for_fit), label='fit', c=colors[i], zs = min_x, zdir = 'x')
+
                 if show_hists: 
-                    plt.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
-                        zs = min_x, zdir = 'x', ec = (0, 0, 0, 0.5), facecolor = (0,0,0,0))
-                    plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_tiled_bins_with_histograms.png")
+                    ax.bar(bin_centers, bin_heights, width=bin_widths, label='histogram', 
+                            zs = min_x, zdir = 'x', ec = (0, 0, 0, 0.5), facecolor = (0,0,0,0))
+                    ax.figure.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_tiled_bins_with_histograms.png")
 
                 else: 
-                    plt.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_tiled_bins.png")
+                    ax.figure.savefig(f"{self.image_path}{starlist.columns[0]}_optimized_with_{len(starlist)}_tiled_bins.png")
 
         return optimized_means, optimized_mean_errors
 
@@ -1205,7 +1236,7 @@ class Red_Clump_Analysis_vRiemann:
         plt.legend()
         plt.gca().invert_yaxis()
         plt.title(f"Fitted Slope: {fitted_line.slope.value.round(3)}")
-        
+
         #plt.xlim(self.x_range[0], self.x_range[1])
         #plt.ylim(bins[self.n-1][1][1], bins[0][1][0])
 
@@ -1222,7 +1253,128 @@ class Red_Clump_Analysis_vRiemann:
 
         return fitted_line.slope.value, fitted_line.intercept.value
 
+    def overplot_isochrones(self, logAge, AKs, AKs_step, dist, 
+                            height, metallicity, filters, iso_dir,
+                            show_cmd = True, verbose = True): 
 
+        # filters = [filt1name, filt2name] - refer to SPISEA documentation, filter names are specific and unique. 
+
+        slope, intercept = self.determine_tiled_slope(verbose = False)
+        check = False
+
+        catalog1 = np.array(self.catalog1)
+        catalog2 = np.array(self.catalog2)
+
+        x = np.subtract(catalog1, catalog2)
+
+        red_law = reddening.RedLawFritz11(scale_lambda = 2.166) 
+        evo_model = evolution.MISTv1()                  # evolution model
+        atm_func = atmospheres.get_merged_atmosphere    # atmospheric model
+
+        AKs2 = AKs + AKs_step
+        AKs3 = AKs2 + AKs_step
+        AKs4 = AKs3 + AKs_step
+        AKs5 = AKs4 + AKs_step
+
+        my_iso = isochrone = synthetic.IsochronePhot(logAge, AKs, dist, 
+                                           metallicity, evo_model, atm_func, red_law = red_law, 
+                                           filters = filters, iso_dir = iso_dir)
+        idx = np.where( abs(my_iso.points['mass'] - 1.0) == min(abs(my_iso.points['mass'] - 1.0)) )[0]
+
+        AKs = AKs2
+        my_iso2 = isochrone = synthetic.IsochronePhot(logAge, AKs, dist, 
+                                           metallicity, evo_model, atm_func, red_law = red_law, 
+                                           filters = filters, iso_dir = iso_dir)
+        idx2 = np.where( abs(my_iso2.points['mass'] - 1.0) == min(abs(my_iso2.points['mass'] - 1.0)) )[0]
+
+        AKs = AKs3
+        my_iso3 = isochrone = synthetic.IsochronePhot(logAge, AKs, dist, 
+                                           metallicity, evo_model, atm_func, red_law = red_law, 
+                                           filters = filters, iso_dir = iso_dir)
+        idx3 = np.where( abs(my_iso3.points['mass'] - 1.0) == min(abs(my_iso3.points['mass'] - 1.0)) )[0]
+
+        AKs = AKs4
+        my_iso4 = isochrone = synthetic.IsochronePhot(logAge, AKs, dist, 
+                                           metallicity, evo_model, atm_func, red_law = red_law, 
+                                           filters = filters, iso_dir = iso_dir)
+        idx4 = np.where( abs(my_iso4.points['mass'] - 1.0) == min(abs(my_iso4.points['mass'] - 1.0)) )[0]
+
+        AKs = AKs5
+        my_iso5 = isochrone = synthetic.IsochronePhot(logAge, AKs, dist, 
+                                           metallicity, evo_model, atm_func, red_law = red_law, 
+                                           filters = filters, iso_dir = iso_dir)
+        idx5 = np.where( abs(my_iso5.points['mass'] - 1.0) == min(abs(my_iso5.points['mass'] - 1.0)) )[0]
+
+        
+        fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+        plt.gca().invert_yaxis()
+
+        if self.catalogyname == self.catalog1name: 
+            check = True
+            y = np.array(self.catalog1)
+
+            plt.scatter(x, y, c = 'k', s = 0.05)
+
+            plt.plot(my_iso.points[''+my_iso.points.keys()[8]] - my_iso.points[''+my_iso.points.keys()[9]],
+                     my_iso.points[''+my_iso.points.keys()[8]], 'r-', label='_nolegend_')
+            plt.plot(my_iso2.points[''+my_iso2.points.keys()[8]] - my_iso2.points[''+my_iso2.points.keys()[9]],
+                     my_iso2.points[''+my_iso2.points.keys()[8]], 'r-', label='_nolegend_')
+            plt.plot(my_iso3.points[''+my_iso3.points.keys()[8]] - my_iso3.points[''+my_iso3.points.keys()[9]],
+                     my_iso3.points[''+my_iso3.points.keys()[8]], 'r-', label='_nolegend_')
+            plt.plot(my_iso4.points[''+my_iso4.points.keys()[8]] - my_iso4.points[''+my_iso4.points.keys()[9]],
+                     my_iso4.points[''+my_iso4.points.keys()[8]], 'r-', label='_nolegend_')
+            plt.plot(my_iso5.points[''+my_iso5.points.keys()[8]] - my_iso5.points[''+my_iso5.points.keys()[9]],
+                     my_iso5.points[''+my_iso5.points.keys()[8]], 'r-', label='_nolegend_')
+            
+            plt.axline((my_iso5.points[''+my_iso5.points.keys()[8]][idx5][0]
+                        - my_iso5.points[''+my_iso5.points.keys()[9]][idx5][0], 
+                        my_iso5.points[''+my_iso5.points.keys()[8]][idx5][0] + height), 
+                        (my_iso.points[''+my_iso.points.keys()[8]][idx][0]
+                        - my_iso.points[''+my_iso.points.keys()[9]][idx][0],
+                        my_iso.points[''+my_iso.points.keys()[8]][idx][0] + height), 
+                        color = 'aqua', label = "isochrone extinction vector")
+
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+            plt.ylabel(f"{self.catalog1name}")
+            filename = f"extinction_vec_{self.catalog1name}_{self.catalog2name}_{self.catalog1name}_{self.n}_tiled_bins" 
+
+        if self.catalogyname == self.catalog2name: 
+            check = True
+            y = np.array(self.catalog2)
+
+            plt.scatter(x, y, c = 'k', s = 0.05)
+
+            plt.plot(my_iso.points[''+my_iso.points.keys()[8]] - my_iso.points[''+my_iso.points.keys()[9]],
+                     my_iso.points[''+my_iso.points.keys()[9]], 'r-', label='_nolegend_')
+            plt.plot(my_iso2.points[''+my_iso2.points.keys()[8]] - my_iso2.points[''+my_iso2.points.keys()[9]],
+                     my_iso2.points[''+my_iso2.points.keys()[9]], 'r-', label='_nolegend_')
+            plt.plot(my_iso3.points[''+my_iso3.points.keys()[8]] - my_iso3.points[''+my_iso3.points.keys()[9]],
+                     my_iso3.points[''+my_iso3.points.keys()[9]], 'r-', label='_nolegend_')
+            plt.plot(my_iso4.points[''+my_iso4.points.keys()[8]] - my_iso4.points[''+my_iso4.points.keys()[9]],
+                     my_iso4.points[''+my_iso4.points.keys()[9]], 'r-', label='_nolegend_')
+            plt.plot(my_iso5.points[''+my_iso5.points.keys()[8]] - my_iso5.points[''+my_iso5.points.keys()[9]],
+                     my_iso5.points[''+my_iso5.points.keys()[9]], 'r-', label='_nolegend_')
+            
+            plt.axline((my_iso5.points[''+my_iso5.points.keys()[8]][idx5][0]
+                        - my_iso5.points[''+my_iso5.points.keys()[9]][idx5][0], 
+                        my_iso5.points[''+my_iso5.points.keys()[9]][idx5][0] + height), 
+                        (my_iso.points[''+my_iso.points.keys()[8]][idx][0]
+                        - my_iso.points[''+my_iso.points.keys()[9]][idx][0],
+                        my_iso.points[''+my_iso.points.keys()[9]][idx][0] + height), 
+                        color = 'aqua', label = "isochrone extinction vector")
+
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+            plt.ylabel(f"{self.catalog2name}")
+            filename = f"extinction_vec_{self.catalog1name}_{self.catalog2name}_{self.catalog2name}_{self.n}_tiled_bins"    
+
+        plt.axline((0, intercept), slope = slope, c = 'r', label = 'derived extinction vector') 
+        plt.legend()
+        plt.savefig(f"{self.image_path}{filename}.png")   
+
+        if not check: 
+            raise Exception("catalogyname must equal catalog1name or catalog2name")
+
+        return 
 
 
 
@@ -1259,6 +1411,7 @@ RC.extract_stars(verbose = True)
 RC.generate_hists(verbose = True, show_hists = True)
 RC.determine_slope()"""
 
+
 RC = Red_Clump_Analysis_vRiemann(catalog1, catalog2, 
                                 catalog1name = "NRCB1 F115W", 
                                 catalog2name = "NRCB1 F212N", 
@@ -1266,9 +1419,26 @@ RC = Red_Clump_Analysis_vRiemann(catalog1, catalog2,
                                 parallel_cutoff1 = [(6.2, 15.4), (7.9, 16.2)], 
                                 parallel_cutoff2 = [(6.65, 15.3), (8.35, 16.1)], 
                                 x_range = [5, 9.2],
-                                n = 20,
+                                n = 15,
                                 image_path = "/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/NRCB1_vF212N/vRiemann/")
-RC.display_cutoffs(verbose = True)
-RC.generate_tile_bins()
-RC.generate_tile_hists(verbose = True, show_hists = True)
-RC.determine_tiled_slope(show_cmd = True)
+ # for F115W-F212N vs. F212N 
+
+"""RC = Red_Clump_Analysis_vRiemann(catalog1, catalog2, 
+                                catalog1name = "NRCB1 F115W", 
+                                catalog2name = "NRCB1 F212N", 
+                                catalogyname = "NRCB1 F115W", 
+                                parallel_cutoff1 = [(6.3, 21.3), (9, 25.2)], 
+                                parallel_cutoff2 = [(6.3, 22), (9, 25.9)], 
+                                x_range = [6, 8],
+                                n = 5,
+                                image_path = "/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/NRCB1_vF115W/vRiemann/")"""
+ # for F115W-F212N vs. F115W
+
+
+#RC.display_cutoffs(verbose = True)
+#RC.generate_tile_bins()
+#RC.generate_tile_hists(verbose = True, show_hists = True)
+#RC.determine_tiled_slope(show_cmd = True)
+RC.overplot_isochrones(filters = ['jwst,F115W', 'jwst,F212N'], logAge = np.log(10**9), 
+                       AKs = 2, AKs_step = 0.25, dist = 8000, metallicity = -0.3, height = -12.3,
+                       iso_dir = "/Users/devaldeliwala/research/work/plots&data/isochrone_plots&data/plots/")
