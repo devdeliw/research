@@ -73,7 +73,7 @@ The second class is similar, but a bit more accurate. Made especially for CMDs w
 RC bar can not solely be extracted with a rectangular cutoff (see
 `work/plots&data/color_magnitude_diagram_plots/NRCB1 F115W-NRCB1 F212N_NRCB1
 F115W_density.png`). It only requires two parallel lines that *roughly* define
-the RC bar by the upper and lower edges. It afterwards implements a left-riemann cutoff by
+the RC bar by the upper and lower edges. Using the two upper parallel line cutoffs, it defines a left-riemann cutoff by
 generating `n` tiled-diagonal bins. 
 
 It afterwards performs the rest of the same procedure as the first
