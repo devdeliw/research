@@ -69,8 +69,9 @@ these values were derived. If all goes well, you should get a fitted slope that
 lines up relatively with the RC slope along with a quantified error for the mag
 values of the slope! See `work/plots&data/rc_analysis_plots/`.
 
-The second class is similar, but a bit more accurate. Made especially for CMDs who's
-RC bar can not solely be extracted with a rectangular cutoff (see
+The second class is similar, but a bit more accurate. It is primarily for CMDs
+whos RC Bar is unable to be solely cutoff using a rectangle (without including
+the main sequence). (see
 `work/plots&data/color_magnitude_diagram_plots/NRCB1 F115W-NRCB1 F212N_NRCB1
 F115W_density.png`). It only requires two parallel lines that *roughly* define
 the RC bar by the upper and lower edges. 
