@@ -73,11 +73,15 @@ The second class is similar, but a bit more accurate. Made especially for CMDs w
 RC bar can not solely be extracted with a rectangular cutoff (see
 `work/plots&data/color_magnitude_diagram_plots/NRCB1 F115W-NRCB1 F212N_NRCB1
 F115W_density.png`). It only requires two parallel lines that *roughly* define
-the RC bar by the upper and lower edges. Using the two upper parallel line cutoffs, it defines a left-riemann cutoff by
-generating `n` tiled-diagonal bins. 
+the RC bar by the upper and lower edges. 
+
+Using the upper and lower line cutoffs -- it generates `n` rectangular bins
+that *move along* downwards with the direction of the line cutoffs. Essentially
+the bins mimick a left-riemann sum -- without the actual summing.
+(See `work/plots&data/rc_analysis_plots/NRCB1_vF212N/vRiemann/NRCB1 F115W_NRCB1 F212N_NRCB1 F212N_20_tile_bins.png`).
 
 It afterwards performs the rest of the same procedure as the first
-class -- optimized compound fitting. 
+class -- optimized compound fitting on each bin. 
 As this method includes less excess stars that are **not** in the RC bar
 it proves to be slightly more accurate.
 
