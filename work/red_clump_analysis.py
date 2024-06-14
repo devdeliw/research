@@ -934,7 +934,7 @@ class Red_Clump_Analysis_vRiemann:
             intercept2 -= height / 3
         else: 
             intercept2 += height / 3
-            intercept1 -= height / 3
+            intercept1 -= height / 3 
 
         if slope1 != slope2:
             raise Exception(f"Slopes of *parallel* cutoffs must be equal. \
@@ -1512,13 +1512,13 @@ class Red_Clump_Analysis_vRiemann:
 
 
 
-def riemann_result(catalog, catalog1filt, catalog2filt, catalogyfilt, region, 
-                   catalog1name, catalog2name, catalogyname, filters, 
+def riemann_result(catalog, catalog1filt, catalog2filt, catalogyfilt, 
+                   region1, region2, regiony, filters, 
                    parallel_cutoff1, parallel_cutoff2, 
                    x_range, n, hists = False,
                    catalog1zp = None, catalog2zp = None):
     
-    catalog1, catalog2, catalog1error, catalog2error = get_matches(catalog, catalog1filt, region, catalog2filt, region)
+    catalog1, catalog2, catalog1error, catalog2error = get_matches(catalog, catalog1filt, region1, catalog2filt, region2)
 
     if catalog1zp: 
         catalog1 += catalog1zp
@@ -1526,18 +1526,18 @@ def riemann_result(catalog, catalog1filt, catalog2filt, catalogyfilt, region,
         catalog2 += catalog2zp
 
     riemann_class = Red_Clump_Analysis_vRiemann(catalog1, catalog2, 
-                                catalog1name = f"{region}_{catalog1name}", 
-                                catalog2name = f"{region}_{catalog2name}", 
-                                catalogyname = f"{region}_{catalogyname}", 
+                                catalog1name = catalog1filt, 
+                                catalog2name = catalog2filt, 
+                                catalogyname = catalogyfilt, 
                                 parallel_cutoff1 = parallel_cutoff1, 
                                 parallel_cutoff2 = parallel_cutoff2, 
                                 x_range = x_range,
                                 n = n,
-                                image_path = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/{region}_v{catalogyfilt}/vRiemann/")
+                                image_path = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/{region1}_{catalog1filt}-{region2}_{catalog2filt}_vs{catalogyfilt}/")
 
     riemann_class.display_cutoffs(verbose = True)
     riemann_class.generate_tile_bins()
-    riemann_class.generate_tile_hists(verbose = True, show_hists = True)
+    riemann_class.generate_tile_hists(verbose = True, show_hists = hists)
     riemann_class.determine_tiled_slope(show_cmd = True)
     riemann_class.overplot_isochrones(filters = filters, logAge = np.log(10**9), 
                        AKs = 2, AKs_step = 0.25, dist = 8000, metallicity = -0.3, height = -12.3,
@@ -1547,57 +1547,57 @@ def riemann_result(catalog, catalog1filt, catalog2filt, catalogyfilt, region,
 fits ='catalogs/dr2/jwst_init_NRCB.fits'
 catalog = Table.read(fits, format='fits')
 
-
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 
-              "NRCB2 F115W", "NRCB2 F212N", "NRCB2 F115W", ['jwst,F115W', 'jwst,F212N'], 
+"""
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 'NRCB2', 'NRCB2',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 10, hists = True, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 
-              "NRCB3 F115W", "NRCB3 F212N", "NRCB3 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 'NRCB3', 'NRCB3',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 10, hists = True, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 
-              "NRCB4 F115W", "NRCB4 F212N", "NRCB4 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 'NRCB4', 'NRCB4',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 10, hists = True, catalog1zp = 26.09, catalog2zp = 22.23)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 
-              "NRCB2 F115W", "NRCB2 F212N", "NRCB2 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 'NRCB2', 'NRCB2',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 10, hists = False, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 
-              "NRCB3 F115W", "NRCB3 F212N", "NRCB3 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 'NRCB3', 'NRCB3',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 10, hists = False, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 
-              "NRCB4 F115W", "NRCB4 F212N", "NRCB4 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 'NRCB4', 'NRCB4',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 10, hists = False, catalog1zp = 26.09, catalog2zp = 22.23)
 
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 
-              "NRCB2 F115W", "NRCB2 F212N", "NRCB2 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 'NRCB2', 'NRCB2',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 15, hists = True, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 
-              "NRCB3 F115W", "NRCB3 F212N", "NRCB3 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 'NRCB3', 'NRCB3',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 15, hists = True, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 
-              "NRCB4 F115W", "NRCB4 F212N", "NRCB4 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 'NRCB4', 'NRCB4',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 15, hists = True, catalog1zp = 26.09, catalog2zp = 22.23)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 
-              "NRCB2 F115W", "NRCB2 F212N", "NRCB2 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB2', 'NRCB2', 'NRCB2',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 15, hists = False, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 
-              "NRCB3 F115W", "NRCB3 F212N", "NRCB3 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB3', 'NRCB3', 'NRCB3',
+             ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 15, hists = False, catalog1zp = 25.95, catalog2zp = 22.15)
-riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 
-              "NRCB4 F115W", "NRCB4 F212N", "NRCB4 F115W", ['jwst,F115W', 'jwst,F212N'], 
+riemann_result(catalog, 'F115W', 'F212N', 'F115W', 'NRCB4', 'NRCB4', 'NRCB4',
+              ['jwst,F115W', 'jwst,F212N'], 
               [(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)], 
               [6, 9], 15, hists = False, catalog1zp = 26.09, catalog2zp = 22.23)
-
+"""
 """
 riemann_result(catalog, 'F115W', 'F212N', 'F212N', 'NRCB2', 
               "NRCB2 F115W", "NRCB2 F212N", "NRCB2 F212N", ['jwst,F115W', 'jwst,F212N'], 
