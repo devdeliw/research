@@ -4,6 +4,7 @@ from catalog_helper_functions import *
 from scipy.stats import linregress
 from matplotlib.patches import Rectangle
 import math
+import numpy as np
 
 class Red_Clump_Analysis_vRect: 
     def __init__(self, catalog1, catalog2, 
@@ -1515,7 +1516,7 @@ class Red_Clump_Analysis_vRiemann:
 def riemann_result(catalog, catalog1filt, catalog2filt, catalogyfilt, 
                    region1, region2, regiony, filters, 
                    parallel_cutoff1, parallel_cutoff2, 
-                   x_range, n, hists = False,
+                   x_range, n, image_path, hists = False,
                    catalog1zp = None, catalog2zp = None):
     
     catalog1, catalog2, catalog1error, catalog2error = get_matches(catalog, catalog1filt, region1, catalog2filt, region2)
@@ -1533,7 +1534,7 @@ def riemann_result(catalog, catalog1filt, catalog2filt, catalogyfilt,
                                 parallel_cutoff2 = parallel_cutoff2, 
                                 x_range = x_range,
                                 n = n,
-                                image_path = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_plots/{region1}_{catalog1filt}-{region2}_{catalog2filt}_vs{catalogyfilt}/")
+                                image_path = image_path)
 
     riemann_class.display_cutoffs(verbose = True)
     riemann_class.generate_tile_bins()
