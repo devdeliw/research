@@ -1,15 +1,20 @@
 from color_magnitude_diagrams import * 
 from isochrones import *
 from catalog_helper_functions import * 
+
 from scipy.stats import linregress
+from scipy.optimize import curve_fit
+from scipy.ndimage import gaussian_filter
+
 from matplotlib.patches import Rectangle
+import matplotlib.cm as cm
+
 import math 
 import numpy as np 
 import pandas as pd
-import seaborn as sns
+
 
 class Optimize: 
-
     def __init__(self, data, name, verbose): 
 
         self.data = data
@@ -104,10 +109,9 @@ class Optimize:
 
 
 class Analysis: 
-
     def __init__(self, catalog1, catalog2, 
                  catalog1name, catalog2name, catalogyname, 
-                 parallel_cutoff1, parallel_cutoff2, 
+                 region, parallel_cutoff1, parallel_cutoff2, 
                  x_range, n, image_path, verbose = False): 
 
         self.catalog1 = catalog1
@@ -115,6 +119,7 @@ class Analysis:
         self.catalog1name = catalog1name
         self.catalog2name = catalog2name
         self.catalogyname = catalogyname
+        self.region = region
         self.parallel_cutoff1 = parallel_cutoff1
         self.parallel_cutoff2 = parallel_cutoff2
         self.x_range = x_range
@@ -323,7 +328,7 @@ class Analysis:
                         count += 1
 
                 if count > 5: 
-                    raise Exception("optimize_bin() never found a suitable fitting - try altering x_range")
+                    raise Exception("optimize_bin() never found a suitable fitting. Try altering `x_range` or squeezing the `parallel_cutoff`s tighter to RC bar; that usually works.")
 
         return succesful_bin_parameters, bins
 
@@ -402,7 +407,7 @@ class Analysis:
 
         return 
 
-    def slope(self, show_plot):
+    def slope(self, show_plot = True):
         
         succesful_bin_parameters, bins = self.analysis()
 
@@ -415,13 +420,16 @@ class Analysis:
             errors.append(succesful_bin_parameters[i][0])
             midpoints.append(bins[i][0] + (bins[i][1] - bins[i][0]) / 2)
 
-        gradient, intercept, r_value, p_value, std_err = linregress(midpoints, means)
+        def linear_func(x, b, a): 
+            y = b + a * x
+            return y
 
-        linear = models.Linear1D(slope = gradient, intercept = intercept)
-        fit = fitting.LevMarLSQFitter()
+        result, cov = curve_fit(linear_func, midpoints, means, sigma = errors, absolute_sigma = True)
 
-        result = fit(linear, midpoints, means)
-        filename = ''
+        inter = result[0]
+        slope = result[1]
+        d_inter = np.sqrt(cov[0][0])
+        d_slope = np.sqrt(cov[1][1])
 
         if show_plot: 
             fig, axis = plt.subplots(1, 1, figsize = (20, 10))
@@ -429,38 +437,59 @@ class Analysis:
             if self.catalogyname == self.catalog1name: 
 
                 plt.scatter(np.subtract(self.catalog1, self.catalog2), 
-                            self.catalog1, c = 'k', s = 0.1, alpha = 0.8)
+                            self.catalog1, c = 'k', s = 0.1, alpha = 0.3)
                 plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
                 plt.ylabel(f"{self.catalog1name}")
 
             if self.catalogyname == self.catalog2name: 
 
                 plt.scatter(np.subtract(self.catalog1, self.catalog2), 
-                            self.catalog2, c = 'k', s = 0.1, alpha = 0.8)
+                            self.catalog2, c = 'k', s = 0.1, alpha = 0.3)
                 plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
                 plt.ylabel(f"{self.catalog2name}")
 
-            plt.plot(midpoints, linear(midpoints), 'r-', label = 'linear fit')
-            plt.scatter(midpoints, means, c = 'cyan', s = 20, marker = 'x', label = 'optimized means')
+            plt.plot(midpoints, [inter + i * slope for i in midpoints], 'r-', label = 'linear fit')
+            plt.scatter(midpoints, means, c = 'cyan', s = 20, marker = 'x', label = 'means')
             plt.errorbar(midpoints, means, yerr=errors, color="cyan", capsize=2, capthick=1, lw = 1, ls = 'none')
 
             plt.legend()
             plt.gca().invert_yaxis()
-            plt.title(f"Fitted Slope: {result.slope.value.round(3)}")
+            plt.title(f"Fitted Slope: {slope.round(3)} ± {d_slope.round(3)}")
+
+            error_above, error_below = [], []
+
+            for i in range(len(means)): 
+                error_above.append(means[i] + errors[i])
+                error_below.append(means[i] - errors[i])
+
+            def poly2d(x, a, b, c): 
+                return a + b*x + c*x**2 
+
+            coefs_poly2d_above, pcov = curve_fit(poly2d, midpoints, error_above)
+            coefs_poly2d_below, pcov = curve_fit(poly2d, midpoints, error_below)
+
+            x_data = np.linspace(min(midpoints), max(midpoints), 50)
+            y_data_above = poly2d(x_data, *coefs_poly2d_above)
+            y_data_below = poly2d(x_data, *coefs_poly2d_below)
+
+            plt.fill_between(x_data, y_data_above, y_data_below, color='cyan', alpha=0.08)
 
             filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_slope"
             plt.savefig(f"{self.image_path}{filename}.png")
 
         print("")
-        print(f"Calculated Red Clump Slope: {result.slope.value}")
+        print("#---------------------------------------#")
+        print(f"{self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}")
+        print(f"Calculated Red Clump Slope: {slope.round(3)} ± {d_slope.round(3)}")
+        print("#---------------------------------------#")
         print("")
 
-        return result.slope.value, result.intercept.value
+        return slope, inter, d_slope, d_inter
 
     def residuals(self): 
 
         succesful_bin_parameters, bins = self.analysis()
-        slope, intercept = self.slope(show_plot = False)
+        slope, intercept, *errors = self.slope(show_plot = False)
 
         starlist_full = []
 
@@ -471,6 +500,15 @@ class Analysis:
         colors = plt.cm.jet(np.linspace(0, 1, len(starlist_full)))
 
         fig, axis = plt.subplots(2, 1,  figsize = (15, 15))
+
+        def heat(x, y, s, bins=1000):
+            heatmap, xedges, yedges = np.histogram2d(x, y, bins=bins)
+            heatmap = gaussian_filter(heatmap, sigma=s)
+
+            extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+            return heatmap.T, extent
+
+        x_full, y_full = [], []
 
         for i in range(len(starlist_full)): 
 
@@ -486,6 +524,8 @@ class Analysis:
             if self.catalogyname == self.catalog2name: 
                 actual_y = starlist_full[i][1]
 
+            x_full.append(x)
+
             for j in x: 
                 predicted_y.append(slope * j + intercept)
 
@@ -494,8 +534,11 @@ class Analysis:
             for k in range(len(predicted_y)): 
                 residuals.append(actual_y[k] - predicted_y[k])
 
+            y_full.append(residuals)
+
             axis[0].scatter(x, residuals, color = colors[i], s = 0.3, label = 'Red Clump Cluster' )
             axis[1].hist(residuals, color = colors[i], histtype='step')
+
 
         axis[0].set_xlabel(f"{self.catalog1name} - {self.catalog2name}")
         axis[0].set_ylabel(f"Residual")
@@ -504,8 +547,121 @@ class Analysis:
         axis[1].set_ylabel(f"Frequency")
 
         filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_residual"
+        axis[0].set_title(f"{self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}")
+
         plt.savefig(f"{self.image_path}{filename}.png")
 
+        fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+
+        x_arrays = [np.array(column) for column in x_full]
+        x_full = np.concatenate(x_arrays)
+        y_arrays = [np.array(column) for column in y_full]
+        y_full = np.concatenate(y_arrays)
+
+        img, extent = heat(x_full, y_full, 16)
+        axis.imshow(img, extent=extent, origin='lower', cmap=cm.jet)
+
+        plt.xlabel(f"{self.catalog1name} - {self.catalog2name}")
+        plt.ylabel("Residual")
+        plt.title(f"{self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}")
+
+        plt.savefig(f"{self.image_path}{filename}_heatmap.png")
+
+        return 
+
+    def n_analysis(self, ns): 
+
+        fig, axis = plt.subplots(3, 1, figsize = (30, 30))
+
+        colors = plt.cm.jet(np.linspace(0, 1, len(ns)))
+
+        optimal_n = 0
+        optimal_slope_error = 100
+
+        for i in range(len(ns)): 
+
+            means = []
+            errors = []
+            midpoints = []
+            slopes = []
+
+            self.n = ns[i] 
+            succesful_bin_parameters, bins = self.analysis()
+            slope, intercept, d_slope, d_inter = self.slope(show_plot = False)
+
+            if d_slope < optimal_slope_error: 
+                optimal_slope_error = d_slope
+                optimal_n = ns[i]
+
+            for j in range(len(succesful_bin_parameters)): 
+                means.append(succesful_bin_parameters[j][3])
+                errors.append(succesful_bin_parameters[j][0])
+                midpoints.append(bins[j][0] + (bins[j][1] - bins[j][0]) / 2)
+
+            axis[0].scatter(ns[i], slope, color = colors[i], label = f'n = {ns[i]}')
+
+            axis[0].set_xlabel("$n$", fontsize = 18)
+            axis[0].set_ylabel("RC Slope", fontsize = 15)
+            axis[0].set_title(f"{self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}", fontsize = 15)
+
+
+            axis[1].plot(midpoints, means, color = colors[i], label = f'n = {ns[i]}')
+            axis[2].plot(midpoints, errors, color = colors[i], label = f'n = {ns[i]}')
+
+            axis[2].set_xlabel(f"{self.catalog1name} - {self.catalog2name}", fontsize = 15)
+
+            axis[1].set_ylabel("Mean", fontsize = 15)
+            axis[2].set_ylabel("Error", fontsize = 15)
+
+            plt.legend()
+
+        filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_{ns}"
+
+        plt.savefig(f"{self.image_path}{filename}.png")
+
+        print("")
+        print(f"The Optimal Number of Bins: {optimal_n}")
+        print("")
+
+        return optimal_n, optimal_slope_error
+
+    def run_optimal_bin(self, ns, show_hists = False):
+
+        optimal_n, optimal_slope_error = self.n_analysis(ns) 
+        self.n = optimal_n 
+
+        self.plot()
+        self.slope()
+        self.residuals()
+
+        return 
+
+
+def run(catalog, catalog1name, catalog2name, catalogyname, 
+       region1, region2, regiony, 
+       parallel_cutoff1, parallel_cutoff2, 
+       x_range, ns, image_path, show_hists = None,
+       catalog1zp = None, catalog2zp = None):
+    
+    catalog1, catalog2, *errors = get_matches(catalog, catalog1name, region1, catalog2name, region2)
+
+    if catalog1zp: 
+        catalog1 += catalog1zp
+    if catalog2zp: 
+        catalog2 += catalog2zp
+
+    class_ = Analysis(catalog1, catalog2, 
+                      catalog1name, catalog2name, catalogyname, region1,
+                      parallel_cutoff1, parallel_cutoff2, x_range, 
+                      ns, image_path, verbose = True
+    )
+
+    if show_hists: 
+        class_.run_optimal_bin(ns, True)
+    else: 
+        class_.run_optimal_bin(ns)
+
+    return 
 
 
 
@@ -522,47 +678,6 @@ class Analysis:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-fits ='~/research/work/catalogs/dr2/jwst_init_NRCB.fits'
-catalog = Table.read(fits, format='fits')
-catalog1, catalog2, catalog1error, catalog2error = get_matches(catalog, 'F115W', 'NRCB1', 'F212N', 'NRCB1')
-
-catalog1 += 25.92
-catalog2 += 22.12
-
-catalog1name = 'F115W'
-catalog2name = 'F212N'
-catalogyname = 'F212N'
-
-parallel_cutoff1, parallel_cutoff2 = [(6.2, 15.5), (7.9, 16.3)], [(6.65, 15.2), (8.35, 16.0)]
-x_range = [5, 9]
-n = 10
-image_path = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_v2_plots/NRCB1/{catalog1name}-{catalog2name}/vs{catalogyname}/"
-
-if not os.path.isdir(image_path):
-        os.makedirs(image_path)
-
-verbose = True 
-
-test = Analysis(catalog1, catalog2, catalog1name, catalog2name, catalogyname, 
-                parallel_cutoff1, parallel_cutoff2, x_range, n, image_path, verbose = True)
-
-#test.plot(show_hists = True)
-#test.plot(show_hists = False)
-
-test.plot()
 
 
 
