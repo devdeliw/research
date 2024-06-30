@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from astropy.table import Table
-from red_clump_v2 import run
+from red_clump_riemann import Run_Riemann
 import os
 
 zeropoints = {
@@ -128,6 +128,8 @@ script = [[['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F115W']],
 		  [['NRCB4', 'F212N'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
 ]
 
+script = [[['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F115W']]]
+
 # ------------------------------------------------------------------- #
 
 for i in range(len(script)): 
@@ -159,6 +161,7 @@ for i in range(len(script)):
 	catalog2zp = zeropoints[catalog2filt][region2]
 
 	ns = [10, 11, 12, 13, 14, 15] 
+	n = 3
 	image_path = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_v2_plots/{region1}/{catalog1filt}-{catalog2filt}/vs{catalogyfilt}/"
 	hists = [True, False]
 
@@ -171,21 +174,42 @@ for i in range(len(script)):
 	print(f"##################################################")
 	print("")
 
-	run(
+	class_ = Run_(
+	    catalog=catalog,
+	    catalog1name=catalog1filt, 
+	    catalog2name=catalog2filt, 
+	    catalogyname=catalogyfilt, 
+	    region1=region1, 
+	    region2=region2, 
+	    regiony=regiony, 
+	    parallel_cutoff1=parallel_cutoff1, 
+	    parallel_cutoff2=parallel_cutoff2, 
+	    x_range=x_range, 
+	    n=n, 
+	    image_path=image_path, 
+	    show_hists=hists[0], 
+	    catalog1zp=catalog1zp, 
+	    catalog2zp=catalog2zp 
+	)	
+
+	"""
+	Run(
 		catalog, catalog1filt, catalog2filt, catalogyfilt, 
 		region1, region2, regiony, 
 		parallel_cutoff1, parallel_cutoff2, 
 		x_range, ns, image_path, hists[0], 
 		catalog1zp, catalog2zp, 
-	)
-	run(
+	).run()
+	Run(
 		catalog, catalog1filt, catalog2filt, catalogyfilt, 
 		region1, region2, regiony,  
 		parallel_cutoff1, parallel_cutoff2, 
 		x_range, ns, image_path, hists[1], 
 		catalog1zp, catalog2zp, 
-	)
-
+	).run()
+	"""
+	
+	class_.run(ns = [10, 11, 12, 13, 14, 15])
 
 
 
