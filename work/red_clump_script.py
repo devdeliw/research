@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
+
 from astropy.table import Table
 from red_clump_riemann import Run_Riemann
+from red_clump_rectangle import Run_Rectangle
+
 import os
 
 zeropoints = {
@@ -19,7 +22,7 @@ spisea_filters= pd.DataFrame(
 
 x_range_NRCB1 = { 
 	'x1' : ['F115W', 'F212N', 'F323N', 'F405N'], 
-	'F115W' : [None, [4.9, 9], [5.7, 10.1], [6.2, 11.6]], 
+	'F115W' : [None, [4.9, 9.1], [5.7, 10.1], [6.2, 11.6]], 
 	'F212N' : [None, None, None, [1.2, 2.9]], 
 	'F323N' : [None, None, None, [0.4, 3]]}
 
@@ -128,7 +131,7 @@ script = [[['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F115W']],
 		  [['NRCB4', 'F212N'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
 ]
 
-script = [[['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F115W']]]
+script = [[['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F212N']]]
 
 # ------------------------------------------------------------------- #
 
@@ -161,12 +164,13 @@ for i in range(len(script)):
 	catalog2zp = zeropoints[catalog2filt][region2]
 
 	ns = [10, 11, 12, 13, 14, 15] 
-	n = 3
-	image_path = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_v2_plots/{region1}/{catalog1filt}-{catalog2filt}/vs{catalogyfilt}/"
+	n = 10
+	image_path_rect = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_rectangle_plots/{region1}/{catalog1filt}-{catalog2filt}/vs{catalogyfilt}/"
+	image_path_riemann = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_riemann_plots/{region1}/{catalog1filt}-{catalog2filt}/vs{catalogyfilt}/"
 	hists = [True, False]
 
-	if not os.path.isdir(image_path):
-		os.makedirs(image_path)
+	#if not os.path.isdir(image_path_rect):
+	#	os.makedirs(image_path_rect)
 
 	print("")
 	print(f"##################################################")
@@ -174,7 +178,7 @@ for i in range(len(script)):
 	print(f"##################################################")
 	print("")
 
-	class_ = Run_(
+	class_1 = Run_Riemann(
 	    catalog=catalog,
 	    catalog1name=catalog1filt, 
 	    catalog2name=catalog2filt, 
@@ -186,30 +190,32 @@ for i in range(len(script)):
 	    parallel_cutoff2=parallel_cutoff2, 
 	    x_range=x_range, 
 	    n=n, 
-	    image_path=image_path, 
+	    image_path=image_path_riemann, 
 	    show_hists=hists[0], 
 	    catalog1zp=catalog1zp, 
 	    catalog2zp=catalog2zp 
 	)	
 
-	"""
-	Run(
-		catalog, catalog1filt, catalog2filt, catalogyfilt, 
-		region1, region2, regiony, 
-		parallel_cutoff1, parallel_cutoff2, 
-		x_range, ns, image_path, hists[0], 
-		catalog1zp, catalog2zp, 
-	).run()
-	Run(
-		catalog, catalog1filt, catalog2filt, catalogyfilt, 
-		region1, region2, regiony,  
-		parallel_cutoff1, parallel_cutoff2, 
-		x_range, ns, image_path, hists[1], 
-		catalog1zp, catalog2zp, 
-	).run()
-	"""
+	class_2 = Run_Rectangle( 
+		catalog = catalog, 
+		catalog1name = catalog1filt, 
+		catalog2name = catalog2filt, 
+		catalogyname = catalogyfilt, 
+		region1 = region1, 
+		region2 = region2, 
+		regiony = regiony, 
+		xlim = x_range, 
+		ylim = [13.9, 16.7], 
+		n = n, 
+		image_path = image_path_rect, 
+		show_hists = hists[1], 
+		catalog1zp = catalog1zp, 
+		catalog2zp = catalog2zp)
+
 	
-	class_.run(ns = [10, 11, 12, 13, 14, 15])
+	class_2.run(ns = [8, 9, 10, 11, 12, 13, 14, 15])
+	class_1.run(ns = [8, 9, 10, 11, 12, 13, 14, 15])
+
 
 
 
