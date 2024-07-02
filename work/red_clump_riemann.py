@@ -10,9 +10,12 @@ from matplotlib.patches import Rectangle
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
+from pathlib import Path
+
 import math 
 import numpy as np 
 import pandas as pd
+
 import os
 
 
@@ -97,13 +100,23 @@ class Optimize:
 
                 # determine if the fit worked
                 if (fitted_std > 0.1 and fitted_std < 1 and 
-                    fitted_amplitude < 500 and fitted_amplitude > 0): 
+                    fitted_amplitude < len(self.data) and fitted_amplitude > 0): 
               
                     amplitude_works = True
                     stds.append(fitted_std)
                     means.append(fitted_mean)
 
-                trial_amplitude += 20
+                # couldn't make the conde consistenly work with a simple 
+                # trial_amplitude += len(self.data) / some_constant
+                # I will fix this issue later. 
+
+                trial = True 
+                if len(self.data) > 2000: 
+                    current_amplitude += 200
+                    trial = False
+                if len(self.data) > 2000 and trial:
+                    current_amplitude += 20
+
                 count += 1
 
                 if count > 15: 
@@ -158,7 +171,7 @@ class Optimize:
                 fitted_amplitude = result.amplitude_0.value
 
                 if (fitted_std > 0.1 and fitted_std < maximum_allowed_std and 
-                   fitted_amplitude < 500 and fitted_amplitude > 0 and  
+                   fitted_amplitude < len(self.data) and fitted_amplitude > 0 and  
                    fitted_mean >= allowed_mean_range[0] and fitted_mean < allowed_mean_range[1]): 
 
                     filtered_data = self.data[(self.data >= fitted_mean - 3 * fitted_std) & (self.data <= fitted_mean + 3 * fitted_std)]
@@ -172,7 +185,17 @@ class Optimize:
                     means.append(fitted_mean)
                     stds.append(fitted_std)
 
-                current_amplitude += 20
+                # couldn't make the code consistenly work with a simple 
+                # current_amplitude += len(self.data) / some_constant
+                # I will fix this issue later. 
+
+                trial = True 
+                if len(self.data) > 2000: 
+                    current_amplitude += 200
+                    trial = False
+                if len(self.data) > 2000 and trial:
+                    current_amplitude += 20
+
                 count += 1
 
                 if count > 15: 
@@ -199,8 +222,9 @@ class Optimize:
         optimized_mean = means[optimized_index].round(3)
         optimized_std = stds[optimized_index].round(3)
 
+
         if self.verbose: 
-            print("")
+            print("\n")
             print(f"{self.name}")
             print(f"Accepted Bin #s: {bins}")
             print(" {:>13} | {:>8} | {:>11} | {:>8} | {:>8} ".format("Optimal Bin #", 
@@ -213,7 +237,7 @@ class Optimize:
                                                              optimized_amplitude, 
                                                              optimized_mean, 
                                                              optimized_std))
-            print("")           
+            print("\n")           
 
         return optimized_error, optimized_bin, optimized_amplitude, optimized_mean, optimized_std
 
@@ -377,10 +401,7 @@ class Analysis:
         self.image_path = image_path 
         self.verbose = verbose
 
-    def cutoffs(self, verbose = True): 
-
-        fig, axis = plt.subplots(1, 1, figsize = (20, 10))
-        plt.gca().invert_yaxis()
+    def cutoffs(self, show_plot = True): 
 
         x = np.subtract(self.catalog1, self.catalog2)
 
@@ -406,63 +427,66 @@ class Analysis:
             intercept1 -= height / 3 
 
         if slope1 != slope2:
-            raise Exception(f"Slopes of parallel cutoffs must be equal. \
-                            Slope1: {slope1} / Slope2: {slope2} ")
+            raise Exception(f"\n\
+                            Slopes of parallel cutoffs must be equal. \n\
+                            Slope1 = {slope1} but Slope2 = {slope2} ")
 
-        check = False
-        if self.catalogyname == self.catalog1name: 
+        if show_plot: 
 
-            plt.scatter(x, self.catalog1, c = 'k', s = 0.05)
-            plt.ylabel(f"{self.catalog1name}", fontsize = 15)
+            fig, axis = plt.subplots(1, 1, figsize = (20, 10))
+            plt.gca().invert_yaxis()
 
-            check = True
+            check = False
+            if self.catalogyname == self.catalog1name: 
 
-        if self.catalogyname == self.catalog2name: 
+                plt.scatter(x, self.catalog1, c = 'k', s = 0.05)
+                plt.ylabel(f"{self.catalog1name}", fontsize = 15)
 
-            plt.scatter(x, self.catalog2, c = 'k', s = 0.05)
-            plt.ylabel(f"{self.catalog2name}", fontsize = 15)
+                check = True
 
-            check = True
+            if self.catalogyname == self.catalog2name: 
 
-        if not check: 
-            raise Exception(f"catalogyname must either be equal to catalog1name or catalog2name \n \
-                            catalog1name: {catalog1name}, catalog2name: {catalog2name},\
-                            but catalogyname = {catalogyname}"
-            )
+                plt.scatter(x, self.catalog2, c = 'k', s = 0.05)
+                plt.ylabel(f"{self.catalog2name}", fontsize = 15)
 
-        
-        plt.axline(line1[0], line1[1], c = 'r', label = 'provided rc cutoff')
-        plt.axline(line2[0], line2[1], c = 'r')
+                check = True
 
-        plt.axline([0, intercept1], slope = slope1, c = 'aqua', label = 'actual rc cutoff')
-        plt.axline([0, intercept2], slope = slope2, c = 'aqua',)
+            if not check: 
+                raise Exception(f"\n\
+                                catalogyname must either be equal to catalog1name or catalog2name \n\
+                                catalog1name: {catalog1name}, catalog2name: {catalog2name},\n\
+                                but catalogyname = {catalogyname}"
+                )
 
-        plt.axvline(x = self.x_range[0], c = 'r', linestyle = ':', label = 'selected x range')
-        plt.axvline(x = self.x_range[1], c = 'r', linestyle = ':')
+            
+            plt.axline(line1[0], line1[1], c = 'r', label = 'provided rc cutoff')
+            plt.axline(line2[0], line2[1], c = 'r')
 
-        plt.xlabel(f"{self.catalog1name} - {self.catalog2name}", fontsize = 15)
-        plt.legend()
+            plt.axline([0, intercept1], slope = slope1, c = 'aqua', label = 'actual rc cutoff')
+            plt.axline([0, intercept2], slope = slope2, c = 'aqua',)
 
-        filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_cutoff"
-        plt.savefig(f"{self.image_path}{filename}.png")
-        plt.close()
+            plt.axvline(x = self.x_range[0], c = 'r', linestyle = ':', label = 'selected x range')
+            plt.axvline(x = self.x_range[1], c = 'r', linestyle = ':')
 
-        if self.verbose: 
-            if verbose: 
-                print("")
-                print("{:>15} | {:>15}".format("Cutoff Slope", "Cutoff Intercept"))
-                print("{:>15} | {:>15}".format(slope1, round(intercept1, 3)))
-                print("{:>15} | {:>15}".format(slope1, round(intercept2, 3)))
-                print("")
+            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}", fontsize = 15)
+            plt.legend()
+
+            filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_cutoff"
+            my_file = Path(f"{self.image_path}{filename}.png")
+
+            if not my_file.is_file():
+                plt.savefig(f"{self.image_path}{filename}.png")
+                
+            plt.close() 
 
         if intercept1 < intercept2: 
             return intercept1, intercept2, slope1, height
         else: 
             return intercept2, intercept1, slope1, height
 
-    def generate_bin(self, bin_x_range, show_plot = True, verbose = True): 
+    def generate_bin(self, bin_x_range, verbose = True): 
 
-        intercept1, intercept2, slope, height = self.cutoffs(verbose)
+        intercept1, intercept2, slope, height = self.cutoffs(show_plot = True)
         dx = bin_x_range[1] - bin_x_range[0]
 
         current_x = bin_x_range[0]
@@ -476,37 +500,11 @@ class Analysis:
 
         bins = np.array(([current_x, current_x + dx], [yi, yf]))
 
-        if show_plot: 
-            fig, axis = plt.subplots(1, 1, figsize = (20, 10))
-            plt.gca().invert_yaxis()
-
-            x = np.subtract(self.catalog1, self.catalog2)
-
-            if self.catalogyname == self.catalog1name: 
-
-                plt.scatter(x, self.catalog1, c = 'k', s = 0.05)
-                plt.ylabel(f"{self.catalog1name}", fontsize = 15)
-
-            if self.catalogyname == self.catalog2name: 
-
-                plt.scatter(x, self.catalog2, c = 'k', s = 0.05)
-                plt.ylabel(f"{self.catalog2name}", fontsize = 15)
-
-            axis.add_patch(segment)
-
-            plt.axline([0, intercept1], slope = slope, c = 'aqua', label = 'actual rc cutoff')
-            plt.axline([0, intercept2], slope = slope, c = 'aqua',)
-            plt.xlabel(f"{self.catalog1name} - {self.catalog2name}", fontsize = 15)
-            plt.legend()
-
-            filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_{self.n}_tile_bins"
-            plt.savefig(f"{self.image_path}{filename}.png")
-
         return bins, segment
 
     def extract_stars(self, bin_x_range, verbose = True): 
 
-        bins, segment = self.generate_bin(bin_x_range, verbose = verbose, show_plot = False)
+        bins, segment = self.generate_bin(bin_x_range, verbose = verbose)
 
         x = np.subtract(self.catalog1, self.catalog2)
         idxs = []
@@ -600,10 +598,11 @@ class Analysis:
                         bin_x_range = [current_x, current_x + trial_dx + count * 0.1]
                         count += 1
 
-                if count > 5: 
-                    raise Exception("optimize_bin() never found a suitable fitting. \
-                                     Try altering `x_range` or squeezing the `parallel_cutoff`s tighter to RC bar;\
-                                     that usually works."
+                if count > 7: 
+                    raise Exception("\n\
+                                     optimize_bin() never found a suitable fitting. \n\
+                                     Try altering `x_range` or squeezing the `parallel_cutoff`s tighter to the RC bar \n\
+                                     to ensure stars from main sequence aren't included. Or maybe there are just too few stars? "
                           )
 
         return succesful_bin_parameters, bins, y
@@ -731,12 +730,12 @@ class Analysis:
             plt.plot(midpoints, [inter + i * slope for i in midpoints], 'r-', label = 'linear fit')
             plt.scatter(midpoints, means, c = 'cyan', s = 20, marker = 'x', label = 'means')
 
-            errors = [error * 40 for error in errors]
+            errors = [error * 50 for error in errors]
             plt.errorbar(midpoints, means, yerr=errors, color="cyan", capsize=2, capthick=1, lw = 1, ls = 'none')
 
             plt.legend()
             plt.gca().invert_yaxis()
-            plt.title(f"Fitted Slope: {slope.round(3)} ± {d_slope.round(3)}. Error Bars scaled 40x. ", fontsize = 15)
+            plt.title(f"Fitted Slope: {slope.round(3)} ± {d_slope.round(3)}. Error Bars scaled 50x. ", fontsize = 15)
 
             error_above, error_below = [], []
 
@@ -761,12 +760,13 @@ class Analysis:
             plt.savefig(f"{self.image_path}{filename}.png")
             plt.close()
 
-        print("")
-        print("#---------------------------------------#")
-        print(f"{self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}")
-        print(f"Calculated Red Clump Slope: {slope.round(3)} ± {d_slope.round(3)}")
-        print("#---------------------------------------#")
-        print("")
+        print("\n\n")
+        print(f"[SLOPE] {self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}")
+        print("‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾")
+        print(f"# For {self.n} Segments:")
+        print(f"# Calculated Red Clump Slope: {slope.round(3)} ± {d_slope.round(3)}")
+        print("___________________________________________")
+        print("\n\n")
 
         return slope, inter, d_slope, d_inter
 
@@ -867,8 +867,14 @@ class Analysis:
         optimal_n = 0
         optimal_slope_error = 100
 
+        print("\n")
+        print(f"Starting Optimize Curve Fitting Algorithm (OCF)")
+        print(f"Provided Possible # of Segments: {ns}")
+        print("\n")
+
         # implements the entire optimized curve fitting algorithm to retrieve possible slopes
         # for every n in ns
+
         for i in range(len(ns)): 
 
             means = []
@@ -876,6 +882,11 @@ class Analysis:
             midpoints = []
 
             self.n = ns[i] 
+
+            print(f"[OCF]: {self.n} Segments ")
+            print("‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾")
+            print("\n")
+
             succesful_bin_parameters, bins, y = self.analysis()
             slope, intercept, d_slope, d_inter = self.slope(show_plot = False)
 
@@ -892,28 +903,28 @@ class Analysis:
             axis[0].errorbar(ns[i], slope, yerr=d_slope, color=colors[i], capsize=2, capthick=1, lw = 1, ls = 'none')
 
             axis[0].set_xlabel("$n$", fontsize = 22)
-            axis[0].set_ylabel("RC Slope", fontsize = 15)
-            axis[0].set_title(f"{self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}", fontsize = 15)
-
+            axis[0].set_ylabel("RC Slope", fontsize = 20)
+            axis[0].set_title(f"{self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}", fontsize = 20)
 
             axis[1].plot(midpoints, means, color = colors[i], label = f'n = {ns[i]}')
             axis[2].plot(midpoints, errors, color = colors[i], label = f'n = {ns[i]}')
 
-            axis[2].set_xlabel(f"{self.catalog1name} - {self.catalog2name}", fontsize = 15)
+            axis[2].set_xlabel(f"{self.catalog1name} - {self.catalog2name}", fontsize = 20)
 
-            axis[1].set_ylabel("Mean", fontsize = 15)
-            axis[2].set_ylabel("Error", fontsize = 15)
+            axis[1].set_ylabel("Mean", fontsize = 20)
+            axis[2].set_ylabel("Error", fontsize = 20)
 
-            plt.legend()
+            axis[2].legend()
 
         filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_{ns}"
 
-        axis[1].set_title(f"The Optimal Bin: {optimal_n}", fontsize = 15)
+        axis[1].set_title(f"The Optimal Bin: {optimal_n}", fontsize = 20)
         plt.savefig(f"{self.image_path}{filename}.png")
 
-        print("")
-        print(f"The Optimal Number of Bins: {optimal_n}")
-        print("")
+        print("\n\n")
+        print(f"[OCF Result]:  Provided {ns},")
+        print(f"The Optimal Number of Segments: {optimal_n}")
+        print("\n\n")
 
         return optimal_n, optimal_slope_error
 
@@ -921,6 +932,10 @@ class Analysis:
 
         optimal_n, optimal_slope_error = self.n_analysis(ns) 
         self.n = optimal_n 
+
+        print(f"\n")
+        print(f"[OCF]: Finally re-running OCF for the Optimal # of Segments: {self.n}")
+        print(f"\n")
 
         if perform_plot: 
             self.plot(show_hists = show_hists)
@@ -1067,6 +1082,8 @@ class Run_Riemann:
 
         slope, d_slope = 0, 0
 
+        print(f"{self.region1} {self.catalog1name} -  {self.region2} {self.catalog2name} vs. {self.regiony} {self.catalogyname}")
+
         if self.show_hists: 
             slope, d_slope = class_.run_optimal_bin(ns, show_hists = True, 
                                                     perform_plot = perform_plot, perform_residuals = perform_residuals)
@@ -1090,9 +1107,9 @@ class Run_Riemann:
 
         for i in range(n): 
 
-            print(f"=================================")
+            print(f"\n\n")
             print(f"Running Population Segment {i+1} of {n}")
-            print(f"=================================")
+            print(f"\n\n")
 
             self.x_range = [start, start + dx]
             x_ranges.append(self.x_range)

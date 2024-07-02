@@ -2,219 +2,134 @@ import pandas as pd
 import numpy as np
 
 from astropy.table import Table
+from ast import literal_eval
+
 from red_clump_riemann import Run_Riemann
 from red_clump_rectangle import Run_Rectangle
 
 import os
 
-zeropoints = {
-    'Region': ['NRCB1', 'NRCB2', 'NRCB3', 'NRCB4', 'NRCB5'],
-    'F115W': [25.92, 25.95, 25.97, 25.98, 0],
-    'F212N': [22.12, 22.15, 22.15, 22.23, 0], 
-    'F323N': [0, 0, 0, 0, 21.14], 
-    'F405N': [0, 0, 0, 0, 20.9], 
-}
 
-spisea_filters= pd.DataFrame(
-    ['jwst,F115W', 'jwst,F212N', 'jwst,F323N', 'jwst,F405N'],
-    index=['F115W', 'F212N', 'F323N', 'F405N'],
-    columns = ['SPISEA'])
+#-------------------------------------------------------------------------------------------------#
+# set your base image paths here
 
-x_range_NRCB1 = { 
-	'x1' : ['F115W', 'F212N', 'F323N', 'F405N'], 
-	'F115W' : [None, [4.9, 9.1], [5.7, 10.1], [6.2, 11.6]], 
-	'F212N' : [None, None, None, [1.2, 2.9]], 
-	'F323N' : [None, None, None, [0.4, 3]]}
+# for the rectangle software:
+image_path_rectangle = '/Users/devaldeliwala/research/work/plots&data/red_clump_analysis/rectangle_plots/'
 
-x_range_NRCB2 = { 
-	'x1' : ['F115W', 'F212N', 'F323N', 'F405N'], 
-	'F115W' : [None, [4.9, 9.3], [5.8, 10.2], [6.3, 11.35]], 
-	'F212N' : [None, None, None, [1.2, 3]], 
-	'F323N' : [None, None, None, [0.4, 3]]}
+# for the riemann software:
+image_path_riemann = '/Users/devaldeliwala/research/work/plots&data/red_clump_analysis/riemann_plots/'
 
-x_range_NRCB3 = { 
-	'x1' : ['F115W', 'F212N', 'F323N', 'F405N'], 
-	'F115W' : [None, [5.1, 9.6], [6.25, 10.4], [6.5, 11.8]], 
-	'F212N' : [None, None, None, [1.3, 3]], 
-	'F323N' : [None, None, None, [0.4, 3]]}
+#-------------------------------------------------------------------------------------------------#
 
-x_range_NRCB4 = { 
-	'x1' : ['F115W', 'F212N', 'F323N', 'F405N'], 
-	'F115W' : [None, [5, 9.5], [6, 10.2], [6.4, 11.8]], 
-	'F212N' : [None, None, None, [1.2, 3]], 
-	'F323N' : [None, None, None, [0.4, 3]]}
+array = [0]
 
-f115w_x1_f212n_x2 = { 
-    'F115W' : [[(6.3, 21.3), (9, 25.2)], [(6.3, 22), (9, 25.9)]],
-    'F212N' : [[(6.2, 15.5), (7.9, 16.3)], [(6.65, 15.2), (8.35, 16.0)]]}
+for i in range(40): 
+	array.append(i)
 
-f115w_x1_f323n_x2 = {
-    'F115W' : [[(6.9, 21.45), (8.5, 23.65)], [(7.5, 21.35), (9.1, 23.55)]],
-    'F323N' : [[(7.4, 13.65), (10, 15.05)], [(7.2, 14.35), (9.8, 15.75)]]}
+array.pop(0)
 
-f115w_x1_f405n_x2 = { 
-    'F115W' : [[(7.85, 21), (10, 23.5)], [(8, 21.95), (10.15, 24.45)]],
-    'F405N' : [[(7.9, 13.4), (10.5, 13.9)], [(8.4, 14), (11, 14.5)]]}
+# access script 
+script = pd.read_csv("red_clump_analysis_script.csv").drop(array)
 
-f212n_x1_f323n_x2 = {
-    'F212N' : 0,
-    'F323N' : 0}
+# ensure outputted lists aren't strings after pd.read_csv()
+for i in ['x_range', 'parallel_cutoff1', 'parallel_cutoff2', 'xlim', 'ylim']: 
+    script.loc[:, i] = script.loc[:, i].apply(lambda x: literal_eval(x))
 
-f212n_x1_f405n_x2 = {
-    'F212N' : [[(1.6, 14.9), (2.15, 15.85)], [(1.55, 15.5), (2.1, 16.45)]],
-    'F405N' : [[(1.5, 13.35), (2.2, 13.75)], [(1.6, 13.9), (2.3, 14.3)]]}
-
-f323n_x1_f405n_x2 = { 
-    'F323N' : [[(0.5, 13.7), (2, 15.75)], [(0.5, 14.8), (2, 16.85)]],
-    'F405N' : [[(0.5, 14.3), (2.6, 15)], [(0.7, 13), (2.8, 13.7)]]}
-
-f115w_x1 = { 
-    'F212N' : f115w_x1_f212n_x2,
-    'F323N' : f115w_x1_f323n_x2,
-    'F405N' : f115w_x1_f405n_x2}
-
-f212n_x1 = { 
-    'F323N' : f212n_x1_f323n_x2,
-    'F405N' : f212n_x1_f405n_x2}
-
-f323n_x1 = { 
-    'F405N' : f323n_x1_f405n_x2}
-
-cutoffs = pd.DataFrame({ 
-    'F115W' : f115w_x1,
-    'F212N' : f212n_x1,
-    'F323N' : f323n_x1})
-
-zeropoints = pd.DataFrame(zeropoints).set_index('Region')
-
-x_range_NRCB1 = pd.DataFrame(x_range_NRCB1).set_index('x1')
-x_range_NRCB2 = pd.DataFrame(x_range_NRCB2).set_index('x1')
-x_range_NRCB3 = pd.DataFrame(x_range_NRCB3).set_index('x1')
-x_range_NRCB4 = pd.DataFrame(x_range_NRCB4).set_index('x1')
-
-fits ='~/research/work/catalogs/dr2/jwst_init_NRCB.fits'
+# matched star catalog
+fits ='/Users/devaldeliwala/research/work/catalogs/dr2/jwst_init_NRCB.fits'
 catalog = Table.read(fits, format='fits')
 
-# Add what you want to run. The indexing of each subarray is x1, x2, y
-# For an x1 - x2 vs y CMD. 
-script = [[['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F115W']],
-		  [['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F212N']],
-		  [['NRCB2', 'F115W'], ['NRCB2', 'F212N'], ['NRCB2', 'F115W']],
-		  [['NRCB2', 'F115W'], ['NRCB2', 'F212N'], ['NRCB2', 'F212N']],
-		  [['NRCB3', 'F115W'], ['NRCB3', 'F212N'], ['NRCB3', 'F115W']],
-		  [['NRCB3', 'F115W'], ['NRCB3', 'F212N'], ['NRCB3', 'F212N']],
-		  [['NRCB4', 'F115W'], ['NRCB4', 'F212N'], ['NRCB4', 'F115W']],
-		  [['NRCB4', 'F115W'], ['NRCB4', 'F212N'], ['NRCB4', 'F212N']],
-		  [['NRCB1', 'F115W'], ['NRCB5', 'F323N'], ['NRCB1', 'F115W']],
-		  [['NRCB1', 'F115W'], ['NRCB5', 'F323N'], ['NRCB5', 'F323N']],
-		  [['NRCB2', 'F115W'], ['NRCB5', 'F323N'], ['NRCB2', 'F115W']],
-		  [['NRCB2', 'F115W'], ['NRCB5', 'F323N'], ['NRCB5', 'F323N']],
-		  [['NRCB3', 'F115W'], ['NRCB5', 'F323N'], ['NRCB3', 'F115W']],
-		  [['NRCB3', 'F115W'], ['NRCB5', 'F323N'], ['NRCB5', 'F323N']],
-		  [['NRCB4', 'F115W'], ['NRCB5', 'F323N'], ['NRCB4', 'F115W']],
-		  [['NRCB4', 'F115W'], ['NRCB5', 'F323N'], ['NRCB5', 'F323N']],
-		  [['NRCB1', 'F115W'], ['NRCB5', 'F405N'], ['NRCB1', 'F115W']],
-		  [['NRCB1', 'F115W'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-		  [['NRCB2', 'F115W'], ['NRCB5', 'F405N'], ['NRCB2', 'F115W']],
-		  [['NRCB2', 'F115W'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-		  [['NRCB3', 'F115W'], ['NRCB5', 'F405N'], ['NRCB3', 'F115W']],
-		  [['NRCB3', 'F115W'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-		  [['NRCB4', 'F115W'], ['NRCB5', 'F405N'], ['NRCB4', 'F115W']],
-		  [['NRCB4', 'F115W'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-		  [['NRCB1', 'F212N'], ['NRCB5', 'F405N'], ['NRCB1', 'F212N']],
-		  [['NRCB1', 'F212N'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-		  [['NRCB2', 'F212N'], ['NRCB5', 'F405N'], ['NRCB2', 'F212N']],
-		  [['NRCB2', 'F212N'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-		  [['NRCB3', 'F212N'], ['NRCB5', 'F405N'], ['NRCB3', 'F212N']],
-		  [['NRCB3', 'F212N'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-		  [['NRCB4', 'F212N'], ['NRCB5', 'F405N'], ['NRCB4', 'F212N']],
-		  [['NRCB4', 'F212N'], ['NRCB5', 'F405N'], ['NRCB5', 'F405N']],
-]
+# don't change, not necessary.
+n = 10 
 
-script = [[['NRCB1', 'F115W'], ['NRCB1', 'F212N'], ['NRCB1', 'F212N']]]
+# if you want to show histograms under the curve fits
+# default is set to True
+hists = True
 
-# ------------------------------------------------------------------- #
+"""
+`ns` provides the `n`s you wish to run the software on.
+Each `n` determines how many segments to divide the RC bar by.
+The algorithm will run through every `n` and afterward run 
+the optimal `n` that minimizes the slope of the RC bar. 
 
-for i in range(len(script)): 
+"""
 
-	catalog1filt = script[i][0][1]
-	catalog2filt = script[i][1][1]
-	catalogyfilt = script[i][2][1]
+# change, if necessary.
+ns = [8, 9, 10, 11, 12, 13, 14, 15]
 
-	region1 = script[i][0][0]
-	region2 = script[i][1][0]
-	regiony = script[i][2][0]
+for index, row in script.iterrows():
+   
+	region1 = row['region1']
+	region2 = row['region2']
+	regiony = row['regiony']
 
-	filters = [spisea_filters['SPISEA'][catalog1filt], spisea_filters['SPISEA'][catalog2filt]]
-	parallel_cutoff1 = cutoffs[catalog1filt][catalog2filt][catalogyfilt][0]
-	parallel_cutoff2 = cutoffs[catalog1filt][catalog2filt][catalogyfilt][1]
+	catalog1name = row['catalog1']
+	catalog2name = row['catalog2']
+	catalogyname = row['catalogy']
 
-	x_range = []
+	catalog1zp = row['catalog1zp']
+	catalog2zp = row['catalog2zp']
 
-	if region1 == 'NRCB1': 
-		x_range = x_range_NRCB1[catalog1filt][catalog2filt]
-	if region1 == 'NRCB2': 
-		x_range = x_range_NRCB2[catalog1filt][catalog2filt]
-	if region1 == 'NRCB3': 
-		x_range = x_range_NRCB3[catalog1filt][catalog2filt]
-	if region1 == 'NRCB4': 
-		x_range = x_range_NRCB4[catalog1filt][catalog2filt]
+	x_range = row['x_range']
 
-	catalog1zp = zeropoints[catalog1filt][region1]
-	catalog2zp = zeropoints[catalog2filt][region2]
+	# If non-empty, will use rectangle software 
+	xlim = row['xlim']
+	ylim = row['ylim']
 
-	ns = [10, 11, 12, 13, 14, 15] 
-	n = 10
-	image_path_rect = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_rectangle_plots/{region1}/{catalog1filt}-{catalog2filt}/vs{catalogyfilt}/"
-	image_path_riemann = f"/Users/devaldeliwala/research/work/plots&data/rc_analysis_riemann_plots/{region1}/{catalog1filt}-{catalog2filt}/vs{catalogyfilt}/"
-	hists = [True, False]
+	parallel_cutoff1 = row['parallel_cutoff1']
+	parallel_cutoff2 = row['parallel_cutoff2']
 
-	#if not os.path.isdir(image_path_rect):
-	#	os.makedirs(image_path_rect)
+	# Checking if xlim is empty -- use riemann software
+	if xlim == 0: 
 
-	print("")
-	print(f"##################################################")
-	print(f"Current: {region1} {catalog1filt} - {region2} {catalog2filt} vs. {regiony} {catalogyfilt}")
-	print(f"##################################################")
-	print("")
+		image_path = f'{image_path_riemann}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
 
-	class_1 = Run_Riemann(
-	    catalog=catalog,
-	    catalog1name=catalog1filt, 
-	    catalog2name=catalog2filt, 
-	    catalogyname=catalogyfilt, 
-	    region1=region1, 
-	    region2=region2, 
-	    regiony=regiony, 
-	    parallel_cutoff1=parallel_cutoff1, 
-	    parallel_cutoff2=parallel_cutoff2, 
-	    x_range=x_range, 
-	    n=n, 
-	    image_path=image_path_riemann, 
-	    show_hists=hists[0], 
-	    catalog1zp=catalog1zp, 
-	    catalog2zp=catalog2zp 
-	)	
+		if not os.path.isdir(image_path):
+			os.makedirs(image_path)
 
-	class_2 = Run_Rectangle( 
-		catalog = catalog, 
-		catalog1name = catalog1filt, 
-		catalog2name = catalog2filt, 
-		catalogyname = catalogyfilt, 
-		region1 = region1, 
-		region2 = region2, 
-		regiony = regiony, 
-		xlim = x_range, 
-		ylim = [13.9, 16.7], 
-		n = n, 
-		image_path = image_path_rect, 
-		show_hists = hists[1], 
-		catalog1zp = catalog1zp, 
-		catalog2zp = catalog2zp)
+		class_ = Run_Riemann(
+		    catalog = catalog,
+		    catalog1name = catalog1name, 
+		    catalog2name = catalog2name, 
+		    catalogyname = catalogyname, 
+		    region1 = region1, 
+		    region2 = region2, 
+		    regiony = regiony, 
+		    parallel_cutoff1 = parallel_cutoff1, 
+		    parallel_cutoff2 = parallel_cutoff2, 
+		    x_range = x_range, 
+		    n = n, 
+		    image_path = image_path, 
+		    show_hists = hists, 
+		    catalog1zp = catalog1zp, 
+		    catalog2zp = catalog2zp)
 
-	
-	class_2.run(ns = [8, 9, 10, 11, 12, 13, 14, 15])
-	class_1.run(ns = [8, 9, 10, 11, 12, 13, 14, 15])
+	# xlim is not NaN -- use rectangle software 
+	else: 
+
+		image_path = f'{image_path_rectangle}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
+		
+		if not os.path.isdir(image_path):
+			os.makedirs(image_path)
+
+		class_ = Run_Rectangle( 
+			catalog = catalog, 
+			catalog1name = catalog1name, 
+			catalog2name = catalog2name, 
+			catalogyname = catalogyname, 
+			region1 = region1, 
+			region2 = region2, 
+			regiony = regiony, 
+			xlim = xlim, 
+			ylim = ylim, 
+			n = n, 
+			image_path = image_path, 
+			show_hists = hists, 
+			catalog1zp = catalog1zp, 
+			catalog2zp = catalog2zp)
+
+	# run the algorithm
+	class_.run(ns = ns)
 
 
 
