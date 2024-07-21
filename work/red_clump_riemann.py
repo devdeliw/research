@@ -112,10 +112,10 @@ class Optimize:
 
                 trial = True 
                 if len(self.data) > 2000: 
-                    current_amplitude += 200
+                    trial_amplitude += 200
                     trial = False
-                if len(self.data) > 2000 and trial:
-                    current_amplitude += 20
+                if len(self.data) < 2000 and trial:
+                    trial_amplitude += 20
 
                 count += 1
 
@@ -193,7 +193,7 @@ class Optimize:
                 if len(self.data) > 2000: 
                     current_amplitude += 200
                     trial = False
-                if len(self.data) > 2000 and trial:
+                if len(self.data) < 2000 and trial:
                     current_amplitude += 20
 
                 count += 1
@@ -1216,4 +1216,3 @@ class Run_Riemann:
             plt.savefig(f"{image_path_}{filename}.png")
 
         return 
-
