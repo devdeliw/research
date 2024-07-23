@@ -21,15 +21,8 @@ image_path_riemann = '/Users/devaldeliwala/research/work/plots&data/red_clump_an
 
 #-------------------------------------------------------------------------------------------------#
 
-array = [0]
-
-for i in range(40): 
-	array.append(i)
-
-array.pop(0)
-
 # access script 
-script = pd.read_csv("red_clump_analysis_script.csv").drop(array)
+script = pd.read_csv("red_clump_analysis_script.csv")
 
 # ensure outputted lists aren't strings after pd.read_csv()
 for i in ['x_range', 'parallel_cutoff1', 'parallel_cutoff2', 'xlim', 'ylim']: 
@@ -55,81 +48,84 @@ the optimal `n` that minimizes the slope of the RC bar.
 """
 
 # change, if necessary.
-ns = [8, 9, 10, 11, 12, 13, 14, 15]
-
+ns = [8]
+count = 1
 for index, row in script.iterrows():
+
+	while count < 2: 
    
-	region1 = row['region1']
-	region2 = row['region2']
-	regiony = row['regiony']
+		region1 = row['region1']
+		region2 = row['region2']
+		regiony = row['regiony']
 
-	catalog1name = row['catalog1']
-	catalog2name = row['catalog2']
-	catalogyname = row['catalogy']
+		catalog1name = row['catalog1']
+		catalog2name = row['catalog2']
+		catalogyname = row['catalogy']
 
-	catalog1zp = row['catalog1zp']
-	catalog2zp = row['catalog2zp']
+		catalog1zp = row['catalog1zp']
+		catalog2zp = row['catalog2zp']
 
-	x_range = row['x_range']
+		x_range = row['x_range']
 
-	# If non-empty, will use rectangle software 
-	xlim = row['xlim']
-	ylim = row['ylim']
+		# If non-empty, will use rectangle software 
+		xlim = row['xlim']
+		ylim = row['ylim']
 
-	parallel_cutoff1 = row['parallel_cutoff1']
-	parallel_cutoff2 = row['parallel_cutoff2']
+		parallel_cutoff1 = row['parallel_cutoff1']
+		parallel_cutoff2 = row['parallel_cutoff2']
 
-	# Checking if xlim is empty -- use riemann software
-	if xlim == 0: 
+		# Checking if xlim is empty -- use riemann software
+		if xlim == 0: 
 
-		image_path = f'{image_path_riemann}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
+			image_path = f'{image_path_riemann}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
 
-		if not os.path.isdir(image_path):
-			os.makedirs(image_path)
+			if not os.path.isdir(image_path):
+				os.makedirs(image_path)
 
-		class_ = Run_Riemann(
-		    catalog = catalog,
-		    catalog1name = catalog1name, 
-		    catalog2name = catalog2name, 
-		    catalogyname = catalogyname, 
-		    region1 = region1, 
-		    region2 = region2, 
-		    regiony = regiony, 
-		    parallel_cutoff1 = parallel_cutoff1, 
-		    parallel_cutoff2 = parallel_cutoff2, 
-		    x_range = x_range, 
-		    n = n, 
-		    image_path = image_path, 
-		    show_hists = hists, 
-		    catalog1zp = catalog1zp, 
-		    catalog2zp = catalog2zp)
+			class_ = Run_Riemann(
+			    catalog = catalog,
+			    catalog1name = catalog1name, 
+			    catalog2name = catalog2name, 
+			    catalogyname = catalogyname, 
+			    region1 = region1, 
+			    region2 = region2, 
+			    regiony = regiony, 
+			    parallel_cutoff1 = parallel_cutoff1, 
+			    parallel_cutoff2 = parallel_cutoff2, 
+			    x_range = x_range, 
+			    n = n, 
+			    image_path = image_path, 
+			    show_hists = hists, 
+			    catalog1zp = catalog1zp, 
+			    catalog2zp = catalog2zp)
 
-	# xlim is not NaN -- use rectangle software 
-	else: 
+		# xlim is not NaN -- use rectangle software 
+		else: 
 
-		image_path = f'{image_path_rectangle}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
-		
-		if not os.path.isdir(image_path):
-			os.makedirs(image_path)
+			image_path = f'{image_path_rectangle}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
+			
+			if not os.path.isdir(image_path):
+				os.makedirs(image_path)
 
-		class_ = Run_Rectangle( 
-			catalog = catalog, 
-			catalog1name = catalog1name, 
-			catalog2name = catalog2name, 
-			catalogyname = catalogyname, 
-			region1 = region1, 
-			region2 = region2, 
-			regiony = regiony, 
-			xlim = xlim, 
-			ylim = ylim, 
-			n = n, 
-			image_path = image_path, 
-			show_hists = hists, 
-			catalog1zp = catalog1zp, 
-			catalog2zp = catalog2zp)
+			class_ = Run_Rectangle( 
+				catalog = catalog, 
+				catalog1name = catalog1name, 
+				catalog2name = catalog2name, 
+				catalogyname = catalogyname, 
+				region1 = region1, 
+				region2 = region2, 
+				regiony = regiony, 
+				xlim = xlim, 
+				ylim = ylim, 
+				n = n, 
+				image_path = image_path, 
+				show_hists = hists, 
+				catalog1zp = catalog1zp, 
+				catalog2zp = catalog2zp)
 
-	# run the algorithm
-	class_.run(ns = ns)
+		# run the algorithm
+		class_.run(ns = ns)
+		count += 1
 
 
 

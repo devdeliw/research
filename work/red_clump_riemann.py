@@ -2,9 +2,10 @@ from catalog_helper_functions import *
 
 from astropy.modeling import models, fitting
 
-from scipy.stats import linregress, norm, tstd
+from scipy.stats import linregress, norm, tstd, ks_2samp
 from scipy.optimize import curve_fit
 from scipy.ndimage import gaussian_filter
+
 
 from matplotlib.patches import Rectangle
 import matplotlib.cm as cm
@@ -88,7 +89,7 @@ class Optimize:
 
                 # define the compound fit
                 gaussian = models.Gaussian1D(trial_amplitude, mu, std)
-                linear = models.Linear1D(100, 100)
+                linear = models.Linear1D(1, 1)
                 compound = gaussian + linear
 
                 fit = fitting.LevMarLSQFitter() 
@@ -138,7 +139,7 @@ class Optimize:
         mu, std = norm.fit(self.data) 
 
         # initialize arrays to store succesful fit parameters
-        bins, errors, amplitudes, means, stds = [], [], [], [], []
+        bins, errors, amplitudes, means, stds, slopes, inters = [], [], [], [], [], [], []
 
         mean_std, mean_mean = self.determine_std()
 
@@ -160,7 +161,7 @@ class Optimize:
                 bin_centers = bin_borders[:-1] + bin_widths / 2
 
                 gaussian = models.Gaussian1D(current_amplitude, mu, std)
-                linear = models.Linear1D(100, 100)
+                linear = models.Linear1D(1, 1)
                 compound = gaussian + linear
 
                 fit = fitting.LevMarLSQFitter() 
@@ -169,6 +170,8 @@ class Optimize:
                 fitted_mean = result.mean_0.value
                 fitted_std = result.stddev_0.value
                 fitted_amplitude = result.amplitude_0.value
+                fitted_slope = result.slope_1.value 
+                fitted_inter = result.intercept_1.value
 
                 if (fitted_std > 0.1 and fitted_std < maximum_allowed_std and 
                    fitted_amplitude < len(self.data) and fitted_amplitude > 0 and  
@@ -184,6 +187,8 @@ class Optimize:
                     amplitudes.append(fitted_amplitude)
                     means.append(fitted_mean)
                     stds.append(fitted_std)
+                    slopes.append(fitted_slope)
+                    inters.append(fitted_inter)
 
                 # couldn't make the code consistenly work with a simple 
                 # current_amplitude += len(self.data) / some_constant
@@ -206,6 +211,8 @@ class Optimize:
         amplitudes = np.array(amplitudes)
         means = np.array(means)
         stds = np.array(stds)
+        slopes = np.array(slopes)
+        inters = np.array(inters)
 
         # the mean can't be greater than the max of the data, remove the parameters 
         # where this occurs
@@ -221,6 +228,8 @@ class Optimize:
         optimized_amplitude = amplitudes[optimized_index].round(3)
         optimized_mean = means[optimized_index].round(3)
         optimized_std = stds[optimized_index].round(3)
+        optimized_slope = slopes[optimized_index].round(3)
+        optimized_inter = inters[optimized_index].round(3)
 
 
         if self.verbose: 
@@ -239,7 +248,7 @@ class Optimize:
                                                              optimized_std))
             print("\n")           
 
-        return optimized_error, optimized_bin, optimized_amplitude, optimized_mean, optimized_std
+        return optimized_error, optimized_bin, optimized_amplitude, optimized_mean, optimized_std, optimized_slope, optimized_inter
 
 
 class Analysis: 
@@ -394,6 +403,7 @@ class Analysis:
         self.catalog1name = catalog1name
         self.catalog2name = catalog2name
         self.catalogyname = catalogyname
+        self.region = region
         self.parallel_cutoff1 = parallel_cutoff1
         self.parallel_cutoff2 = parallel_cutoff2
         self.x_range = x_range
@@ -536,27 +546,28 @@ class Analysis:
 
         starlist, idxs = self.extract_stars(bin_x_range)
         y = []
+        x = np.subtract(starlist[starlist.columns[0]][0], starlist[starlist.columns[1]][0])
 
         # running the optimized curve fitting algorithm to determine the optimal fit parameters 
         # for the provided data
         if self.catalogyname == self.catalog2name: 
 
             y = np.array(starlist[starlist.columns[1]][0])
-            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std = Optimize(y, 
+            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, optimal_slope, optimal_inter = Optimize(y, 
                                                                                                 starlist.columns[1], 
                                                                                                 verbose = True
                                                                                         ).optimize_bin()
         if self.catalogyname == self.catalog1name: 
 
             y = np.array(starlist[starlist.columns[0]][0])
-            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std = Optimize(y, 
+            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, optimal_slope, optimal_inter = Optimize(y, 
                                                                                                 starlist.columns[0], 
                                                                                                 verbose = True
                                                                                         ).optimize_bin()
 
         num_stars = len(y)
 
-        return optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, num_stars
+        return optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, optimal_slope, optimal_inter, num_stars, y, x 
 
     def analysis(self, show_hists=False): 
 
@@ -565,6 +576,8 @@ class Analysis:
 
         succesful_bin_parameters = []
         bins = []
+        rc_mags = []
+        rc_x = []
 
         # performs the optimized curve fitting algorithm for every n bin
         # in the range of the RC bar
@@ -580,8 +593,8 @@ class Analysis:
 
                     bin_x_range = [current_x, current_x + trial_dx + 0.1 * count]
 
-                    error, num_bin, amplitude, mean, std, y = self.optimize_bin_fitting(bin_x_range)
-                    succesful_bin_parameters.append([error, num_bin, amplitude, mean, std])
+                    error, num_bin, amplitude, mean, std, slope, inter, y, y2, x2 = self.optimize_bin_fitting(bin_x_range)
+                    succesful_bin_parameters.append([error, num_bin, amplitude, mean, std, slope, inter])
     
                     status = True
 
@@ -591,6 +604,11 @@ class Analysis:
                     print(f"Bin width: {current_bin[1]-current_bin[0]}")
 
                     bins.append(current_bin)
+
+                    y2 = np.array([val for val in y2 if isinstance(val, float)])
+                    x2 = np.array([val for val in x2 if isinstance(val, float)])
+                    rc_mags.append(y2)
+                    rc_x.append(x2)
 
                 except ValueError as e: 
 
@@ -604,6 +622,9 @@ class Analysis:
                                      Try altering `x_range` or squeezing the `parallel_cutoff`s tighter to the RC bar \n\
                                      to ensure stars from main sequence aren't included. Or maybe there are just too few stars? "
                           )
+
+        self.red_clump_mags = rc_mags
+        self.red_clump_x = rc_x
 
         return succesful_bin_parameters, bins, y
 
@@ -866,6 +887,7 @@ class Analysis:
 
         optimal_n = 0
         optimal_slope_error = 100
+        bin_parameters = []
 
         print("\n")
         print(f"Starting Optimize Curve Fitting Algorithm (OCF)")
@@ -894,10 +916,15 @@ class Analysis:
                 optimal_slope_error = d_slope
                 optimal_n = ns[i]
 
+                bin_parameters = []
+                bin_parameters.append(succesful_bin_parameters)
+
+
             for j in range(len(succesful_bin_parameters)): 
                 means.append(succesful_bin_parameters[j][3])
                 errors.append(succesful_bin_parameters[j][0])
                 midpoints.append(bins[j][0] + (bins[j][1] - bins[j][0]) / 2)
+
 
             axis[0].scatter(ns[i], slope, color = colors[i], label = f'n = {ns[i]}')
             axis[0].errorbar(ns[i], slope, yerr=d_slope, color=colors[i], capsize=2, capthick=1, lw = 1, ls = 'none')
@@ -916,6 +943,8 @@ class Analysis:
 
             axis[2].legend()
 
+        self.bin_parameters = bin_parameters
+
         filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_{ns}"
 
         axis[1].set_title(f"The Optimal Bin: {optimal_n}", fontsize = 20)
@@ -928,7 +957,7 @@ class Analysis:
 
         return optimal_n, optimal_slope_error
 
-    def run_optimal_bin(self, ns, show_hists = False, perform_plot = False, perform_residuals = False):
+    def run_optimal_bin(self, ns, show_hists = False, perform_plot = False, perform_residuals = False, perform_KS = False):
 
         optimal_n, optimal_slope_error = self.n_analysis(ns) 
         self.n = optimal_n 
@@ -941,10 +970,97 @@ class Analysis:
             self.plot(show_hists = show_hists)
         if perform_residuals:
             self.residuals()
+        if perform_KS: 
+            self.ks_test()
 
         slope, inter, d_slope, d_inter = self.slope()
 
         return slope, d_slope
+
+    def ks_test(self, show_plot = True): 
+
+        rc_mags     = self.red_clump_mags
+        rc_x        = self.red_clump_x
+
+        means, amplitudes, stds, slopes, inters = [], [], [], [], []
+
+        synthetic_data = []
+        compound_models = []
+
+        for i in self.bin_parameters[0]:
+            means.append(i[3])
+            amplitudes.append(i[2])
+            stds.append(i[4])
+            slopes.append(i[5])
+            inters.append(i[6])
+
+        for i in range(len(means)): 
+            gaussian = models.Gaussian1D(amplitudes[i], means[i], stds[i])
+            linear = models.Linear1D(slopes[i], inters[i])
+            compound = gaussian + linear
+
+            compound_models.append(compound)
+
+        for i in range(len(compound_models)): 
+            y = rc_mags[i]
+
+            # Normalize the PDF to create a CDF
+            y_values = np.linspace(np.min(y), np.max(y), 10000)
+            pdf_values = compound_models[i](y_values)
+            pdf_values /= np.sum(pdf_values)
+            cdf_values = np.cumsum(pdf_values)
+            cdf_values /= cdf_values[-1]
+
+            # Inverse transform sampling to generate synthetic y-values
+            random_values = np.random.rand(len(y))
+            synthetic_y = np.interp(random_values, cdf_values, y_values)
+            synthetic_data.append(synthetic_y)
+
+        synthetic_data_full = []
+        for i in synthetic_data: 
+            for j in i: 
+                synthetic_data_full.append(j)
+        synthetic_data_full = np.array(synthetic_data_full)
+
+        rc_mags_full = []
+        for i in rc_mags: 
+            for j in i: 
+                rc_mags_full.append(j)
+        rc_mags_full = np.array(rc_mags_full)
+
+        rc_x_full = []
+        for i in rc_x: 
+            for j in i: 
+                rc_x_full.append(j)
+        rc_x_full = np.array(rc_x_full)
+
+        ks_statistic, p_value = ks_2samp(rc_mags_full, synthetic_data_full)
+
+        if show_plot: 
+            fig, axis = plt.subplots(2, 1, figsize = (20, 20))
+
+            axis[0].scatter(rc_x_full, rc_mags_full, c = 'k', s = 0.05, label = 'Actual Cluster')
+            axis[1].scatter(rc_x_full, synthetic_data_full, c = 'r', s = 0.05, label = 'Synthetic Cluster')
+
+            for i in range(2): 
+                axis[i].set_xlabel(f'{self.catalog1name} - {self.catalog2name}', fontsize = 15)
+                axis[i].set_ylabel(f'{self.catalogyname}', fontsize = 15)
+                axis[i].legend(fontsize = 15)
+
+            axis[1].set_title(f'KS Statistic: {ks_statistic} / P Value: {p_value}', fontsize = 15)
+            axis[0].set_title(f'{self.region} {self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}')
+
+            filename = 'KS_test'
+            plt.savefig(f"{self.image_path}{filename}.png")
+
+        else: 
+            print(f'KS Statistic: {ks_statistic} / P Value: {p_value}')
+
+        return
+
+
+
+
 
 
 class Run_Riemann: 
@@ -1063,7 +1179,7 @@ class Run_Riemann:
         self.catalog1zp = catalog1zp
         self.catalog2zp = catalog2zp
 
-    def run(self, ns, perform_plot = True, perform_residuals = True):
+    def run(self, ns, perform_plot = True, perform_residuals = True, perform_KS = True):
         
         catalog1, catalog2, *errors = get_matches(self.catalog, self.catalog1name, 
                                                   self.region1, self.catalog2name, self.region2
@@ -1086,10 +1202,14 @@ class Run_Riemann:
 
         if self.show_hists: 
             slope, d_slope = class_.run_optimal_bin(ns, show_hists = True, 
-                                                    perform_plot = perform_plot, perform_residuals = perform_residuals)
+                                                    perform_plot = perform_plot, 
+                                                    perform_residuals = perform_residuals, 
+                                                    perform_KS = perform_KS)
         else: 
             slope, d_slope = class_.run_optimal_bin(ns, 
-                                                    perform_plot = perform_plot, perform_residuals = perform_residuals)
+                                                    perform_plot = perform_plot, 
+                                                    perform_residuals = perform_residuals, 
+                                                    perform_KS = perform_KS)
 
         return slope, d_slope
 
