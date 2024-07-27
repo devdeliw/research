@@ -24,108 +24,127 @@ image_path_riemann = '/Users/devaldeliwala/research/work/plots&data/red_clump_an
 # access script 
 script = pd.read_csv("red_clump_analysis_script.csv")
 
+#drops = [i for i in range(3)]
+#script = script.drop(drops)
+#print(script)
+
 # ensure outputted lists aren't strings after pd.read_csv()
-for i in ['x_range', 'parallel_cutoff1', 'parallel_cutoff2', 'xlim', 'ylim']: 
+for i in ['x_range', 'parallel_cutoff1', 'parallel_cutoff2']: 
     script.loc[:, i] = script.loc[:, i].apply(lambda x: literal_eval(x))
 
 # matched star catalog
 fits ='/Users/devaldeliwala/research/work/catalogs/dr2/jwst_init_NRCB.fits'
 catalog = Table.read(fits, format='fits')
 
-# don't change, not necessary.
-n = 10 
+# change only if running sub_populations
+sub_populations = False
+n = 4
 
 # if you want to show histograms under the curve fits
 # default is set to True
 hists = True
 
-"""
+'''
 `ns` provides the `n`s you wish to run the software on.
 Each `n` determines how many segments to divide the RC bar by.
 The algorithm will run through every `n` and afterward run 
 the optimal `n` that minimizes the slope of the RC bar. 
-
-"""
+'''
 
 # change, if necessary.
-ns = [8]
-count = 1
+ns = [8, 9, 10, 11, 12, 13, 14, 15]
+
+slopes, d_slopes = [], []
 for index, row in script.iterrows():
 
-	while count < 2: 
-   
-		region1 = row['region1']
-		region2 = row['region2']
-		regiony = row['regiony']
+	region1 = row['region1']
+	region2 = row['region2']
+	regiony = row['regiony']
 
-		catalog1name = row['catalog1']
-		catalog2name = row['catalog2']
-		catalogyname = row['catalogy']
+	catalog1name = row['catalog1']
+	catalog2name = row['catalog2']
+	catalogyname = row['catalogy']
 
-		catalog1zp = row['catalog1zp']
-		catalog2zp = row['catalog2zp']
+	catalog1zp = row['catalog1zp']
+	catalog2zp = row['catalog2zp']
 
-		x_range = row['x_range']
+	x_range = row['x_range']
 
-		# If non-empty, will use rectangle software 
-		xlim = row['xlim']
-		ylim = row['ylim']
+	# If non-empty, will use rectangle software 
+	xlim = row['xlim']
+	ylim = row['ylim']
 
-		parallel_cutoff1 = row['parallel_cutoff1']
-		parallel_cutoff2 = row['parallel_cutoff2']
+	parallel_cutoff1 = row['parallel_cutoff1']
+	parallel_cutoff2 = row['parallel_cutoff2']
 
-		# Checking if xlim is empty -- use riemann software
-		if xlim == 0: 
+	# checking if xlim is empty -- use riemann software
+	if xlim == 0: 
 
-			image_path = f'{image_path_riemann}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
+		image_path = f'{image_path_riemann}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
 
-			if not os.path.isdir(image_path):
-				os.makedirs(image_path)
+		if not os.path.isdir(image_path):
+			os.makedirs(image_path)
 
-			class_ = Run_Riemann(
-			    catalog = catalog,
-			    catalog1name = catalog1name, 
-			    catalog2name = catalog2name, 
-			    catalogyname = catalogyname, 
-			    region1 = region1, 
-			    region2 = region2, 
-			    regiony = regiony, 
-			    parallel_cutoff1 = parallel_cutoff1, 
-			    parallel_cutoff2 = parallel_cutoff2, 
-			    x_range = x_range, 
-			    n = n, 
-			    image_path = image_path, 
-			    show_hists = hists, 
-			    catalog1zp = catalog1zp, 
-			    catalog2zp = catalog2zp)
+		class_ = Run_Riemann(
+		    catalog = catalog,
+		    catalog1name = catalog1name, 
+		    catalog2name = catalog2name, 
+		    catalogyname = catalogyname, 
+		    region1 = region1, 
+		    region2 = region2, 
+		    regiony = regiony, 
+		    parallel_cutoff1 = parallel_cutoff1, 
+		    parallel_cutoff2 = parallel_cutoff2, 
+		    x_range = x_range, 
+		    n = n, 
+		    image_path = image_path, 
+		    show_hists = hists, 
+		    catalog1zp = catalog1zp, 
+		    catalog2zp = catalog2zp)
 
-		# xlim is not NaN -- use rectangle software 
-		else: 
+	# xlim is not 0 -- use rectangle software 
+	else: 
 
-			image_path = f'{image_path_rectangle}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
-			
-			if not os.path.isdir(image_path):
-				os.makedirs(image_path)
+		image_path = f'{image_path_rectangle}/{region1}/{catalog1name}-{catalog2name}/vs{catalogyname}/'
+		
+		if not os.path.isdir(image_path):
+			os.makedirs(image_path)
 
-			class_ = Run_Rectangle( 
-				catalog = catalog, 
-				catalog1name = catalog1name, 
-				catalog2name = catalog2name, 
-				catalogyname = catalogyname, 
-				region1 = region1, 
-				region2 = region2, 
-				regiony = regiony, 
-				xlim = xlim, 
-				ylim = ylim, 
-				n = n, 
-				image_path = image_path, 
-				show_hists = hists, 
-				catalog1zp = catalog1zp, 
-				catalog2zp = catalog2zp)
+		class_ = Run_Rectangle( 
+			catalog = catalog, 
+			catalog1name = catalog1name, 
+			catalog2name = catalog2name, 
+			catalogyname = catalogyname, 
+			region1 = region1, 
+			region2 = region2, 
+			regiony = regiony,   
+			xlim = xlim, 
+			ylim = ylim, 
+			n = n, 
+			image_path = image_path, 
+			show_hists = hists, 
+			catalog1zp = catalog1zp, 
+			catalog2zp = catalog2zp)
 
-		# run the algorithm
-		class_.run(ns = ns)
-		count += 1
+	# run the algorithm
+	if not sub_populations: 
+		slope, d_slope = class_.run(ns = ns)
+
+		# store output slopes 
+		slopes.append(slope)
+		d_slopes.append(d_slope)
+
+	if sub_populations: 
+		class_.sub_populations(n = n, ns = ns)
+
+# append returned slopes and errors to script
+if not sub_populations: 
+	script.insert(len(script.columns), f"slope_1", slopes)
+	script.insert(len(script.columns), f"d_slope_1", d_slopes)
+
+	# output script with final calculated slopes and errors
+	script.to_csv('red_clump_analysis_script_2.csv')
+
 
 
 

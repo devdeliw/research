@@ -2,7 +2,7 @@ from catalog_helper_functions import *
 
 from astropy.modeling import models, fitting
 
-from scipy.stats import linregress, norm, tstd, ks_2samp
+from scipy.stats import linregress, norm, tstd, ks_2samp, wasserstein_distance
 from scipy.optimize import curve_fit
 from scipy.ndimage import gaussian_filter
 
@@ -16,6 +16,7 @@ from pathlib import Path
 import math 
 import numpy as np 
 import pandas as pd
+import seaborn as sns
 
 import os
 
@@ -146,7 +147,7 @@ class Optimize:
         # if a fit outputs a standard deviation above the mean + 0.1, it is likely unsuccesful
         # the threshold of 0.1 was determined myself through many iterations
         maximum_allowed_std = mean_std + 0.1
-        allowed_mean_range = [mean_mean - 0.1, mean_mean + 0.1]
+        allowed_mean_range = [mean_mean - 0.2, mean_mean + 0.2]
 
         for i in range(8, 20): 
             
@@ -173,9 +174,30 @@ class Optimize:
                 fitted_slope = result.slope_1.value 
                 fitted_inter = result.intercept_1.value
 
+                # ----- generating synthetic data based on compound fit ------ # 
+                y_values = np.linspace(min(self.data), max(self.data), 10000)
+
+                output_gaussian = models.Gaussian1D(fitted_amplitude, fitted_mean, fitted_std) 
+                output_linear = models.Linear1D(fitted_slope, fitted_inter)
+
+                output_compound = output_gaussian + output_linear
+
+                pdf_values = output_compound(y_values)
+                pdf_values /= np.sum(pdf_values)
+                cdf_values = np.cumsum(pdf_values)
+                cdf_values /= cdf_values[-1]
+
+                # inverse transform sampling to generate synthetic data
+                random_values = np.random.rand(len(self.data))
+                synthetic_y = np.interp(random_values, cdf_values, y_values)
+
+                # earth mover's distance (EMD) metric
+                emd = wasserstein_distance(self.data, synthetic_y)
+
                 if (fitted_std > 0.1 and fitted_std < maximum_allowed_std and 
                    fitted_amplitude < len(self.data) and fitted_amplitude > 0 and  
-                   fitted_mean >= allowed_mean_range[0] and fitted_mean < allowed_mean_range[1]): 
+                   fitted_mean >= allowed_mean_range[0] and fitted_mean < allowed_mean_range[1] and 
+                   emd < 0.1): 
 
                     filtered_data = self.data[(self.data >= fitted_mean - 3 * fitted_std) & (self.data <= fitted_mean + 3 * fitted_std)]
               
@@ -410,6 +432,7 @@ class Analysis:
         self.n = n
         self.image_path = image_path 
         self.verbose = verbose
+        self.count = 0
 
     def cutoffs(self, show_plot = True): 
 
@@ -484,9 +507,10 @@ class Analysis:
             filename = f"{self.catalog1name}-{self.catalog2name}-vs{self.catalogyname}_cutoff"
             my_file = Path(f"{self.image_path}{filename}.png")
 
-            if not my_file.is_file():
+            if self.count == 0:
                 plt.savefig(f"{self.image_path}{filename}.png")
-                
+
+            self.count += 1
             plt.close() 
 
         if intercept1 < intercept2: 
@@ -509,6 +533,8 @@ class Analysis:
         )
 
         bins = np.array(([current_x, current_x + dx], [yi, yf]))
+
+        print(bins)
 
         return bins, segment
 
@@ -789,12 +815,17 @@ class Analysis:
         print("___________________________________________")
         print("\n\n")
 
+        self.slope_value = slope
+        self.inter_value = inter
+        self.d_slope_value = d_slope 
+        self.d_inter_value = d_inter
+
         return slope, inter, d_slope, d_inter
 
     def residuals(self): 
 
         succesful_bin_parameters, bins, y = self.analysis()
-        slope, intercept, *errors = self.slope(show_plot = False)
+        slope, intercept, *errors = self.slope(show_plot = True)
 
         starlist_full = []
 
@@ -949,6 +980,7 @@ class Analysis:
 
         axis[1].set_title(f"The Optimal Bin: {optimal_n}", fontsize = 20)
         plt.savefig(f"{self.image_path}{filename}.png")
+        plt.close()
 
         print("\n\n")
         print(f"[OCF Result]:  Provided {ns},")
@@ -973,11 +1005,9 @@ class Analysis:
         if perform_KS: 
             self.ks_test()
 
-        slope, inter, d_slope, d_inter = self.slope()
+        return self.slope_value, self.d_slope_value
 
-        return slope, d_slope
-
-    def ks_test(self, show_plot = True): 
+    def ks_test(self, show_plots = True): 
 
         rc_mags     = self.red_clump_mags
         rc_x        = self.red_clump_x
@@ -1016,45 +1046,108 @@ class Analysis:
             synthetic_y = np.interp(random_values, cdf_values, y_values)
             synthetic_data.append(synthetic_y)
 
-        synthetic_data_full = []
+        rc_mags_full, synthetic_data_full = [],[]
         for i in synthetic_data: 
             for j in i: 
                 synthetic_data_full.append(j)
-        synthetic_data_full = np.array(synthetic_data_full)
-
-        rc_mags_full = []
         for i in rc_mags: 
             for j in i: 
                 rc_mags_full.append(j)
-        rc_mags_full = np.array(rc_mags_full)
 
-        rc_x_full = []
-        for i in rc_x: 
-            for j in i: 
-                rc_x_full.append(j)
-        rc_x_full = np.array(rc_x_full)
+        rc_mags_full = np.array(rc_mags_full)
+        synthetic_data_full = np.array(synthetic_data_full)
+
 
         ks_statistic, p_value = ks_2samp(rc_mags_full, synthetic_data_full)
 
-        if show_plot: 
-            fig, axis = plt.subplots(2, 1, figsize = (20, 20))
+        if show_plots: 
+            actual_tiles = rc_mags
+            synthetic_tiles = synthetic_data
+            x_axis = f'{self.catalog1name} - {self.catalog2name}'
+            y_axis = f'{self.catalogyname}'
 
-            axis[0].scatter(rc_x_full, rc_mags_full, c = 'k', s = 0.05, label = 'Actual Cluster')
-            axis[1].scatter(rc_x_full, synthetic_data_full, c = 'r', s = 0.05, label = 'Synthetic Cluster')
+            num_tiles = len(actual_tiles)
 
-            for i in range(2): 
-                axis[i].set_xlabel(f'{self.catalog1name} - {self.catalog2name}', fontsize = 15)
-                axis[i].set_ylabel(f'{self.catalogyname}', fontsize = 15)
-                axis[i].legend(fontsize = 15)
+            fig, axes = plt.subplots(num_tiles, 1, figsize=(12, num_tiles * 4))
 
-            axis[1].set_title(f'KS Statistic: {ks_statistic} / P Value: {p_value}', fontsize = 15)
-            axis[0].set_title(f'{self.region} {self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}')
+            # ----------- Density Plot ------------ #
+            for i in range(num_tiles):
+                actual_tile = actual_tiles[i]
+                synthetic_tile = synthetic_tiles[i]
 
-            filename = 'KS_test'
-            plt.savefig(f"{self.image_path}{filename}.png")
+                ax = axes[i] if num_tiles > 1 else axes
+                sns.kdeplot(actual_tile, ax=ax, color='blue', label='Actual Data')
+                sns.kdeplot(synthetic_tile, ax=ax, color='red', label='Synthetic Data')
 
-        else: 
-            print(f'KS Statistic: {ks_statistic} / P Value: {p_value}')
+                ax.set_title(f'Density Plot Comparison - Tile {i+1}')
+                ax.set_xlabel(f'{self.catalogyname} mag')
+                ax.set_ylabel('Density')
+                ax.legend()
+
+            plt.tight_layout()
+            filename = 'plot_kde'
+            fig.suptitle(f'{self.region} {self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}', fontsize = 20)
+            fig.subplots_adjust(top=0.95)
+            plt.savefig(f'{self.image_path}{filename}.png')
+            plt.close()
+
+            # ----------- Cumulative Distribution Function Plot ------------ #
+            fig, axes = plt.subplots(num_tiles, 1, figsize=(12, num_tiles * 4))
+
+            for i in range(num_tiles):
+                actual_tile = actual_tiles[i]
+                synthetic_tile = synthetic_tiles[i]
+
+                actual_sorted = np.sort(actual_tile)
+                synthetic_sorted = np.sort(synthetic_tile)
+                actual_cdf = np.arange(1, len(actual_sorted) + 1) / len(actual_sorted)
+                synthetic_cdf = np.arange(1, len(synthetic_sorted) + 1) / len(synthetic_sorted)
+
+                ax = axes[i] if num_tiles > 1 else axes
+                ax.plot(actual_sorted, actual_cdf, color='blue', label='Actual Data')
+                ax.plot(synthetic_sorted, synthetic_cdf, color='red', label='Synthetic Data')
+                ax.set_xlabel(f'{self.catalogyname} mag')
+                ax.set_title(f'Tile {i+1}')
+                ax.set_ylabel('CDF')
+                ax.legend()
+
+            axes[0].set_title(f'Cumulative Distribution Function (CDF) Comparison \n ks-statistic: {ks_statistic.round(3)}, p-value: {p_value.round(3)}')
+
+            plt.tight_layout()
+            filename = 'plot_cdf'
+            fig.suptitle(f'{self.region} {self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}', fontsize = 20)
+            fig.subplots_adjust(top=0.95) 
+            plt.savefig(f'{self.image_path}{filename}.png')
+            plt.close()
+
+            # ----------- Hexbin Plot ------------ #
+            fig, axes = plt.subplots(num_tiles, 2, figsize=(12, num_tiles * 6))
+
+            for i in range(num_tiles):
+                actual_tile = actual_tiles[i]
+                synthetic_tile = synthetic_tiles[i]
+
+                ax = axes[i, 0]
+                hb = ax.hexbin(rc_x[i], actual_tile, gridsize=50, cmap='Blues')
+                ax.set_title(f'Actual Data Hexbin - Tile {i+1}')
+                ax.set_xlabel(x_axis)
+                ax.set_ylabel(y_axis)
+                fig.colorbar(hb, ax=ax, label='Count')
+
+                ax = axes[i, 1]
+                hb = ax.hexbin(rc_x[i], synthetic_tile, gridsize=50, cmap='Reds')
+                ax.set_title(f'Synthetic Data Hexbin - Tile {i+1}')
+                ax.set_xlabel(x_axis)
+                ax.set_ylabel(y_axis)
+                fig.colorbar(hb, ax=ax, label='Count')
+
+            plt.tight_layout()
+            filename = 'plot_hexbin'
+            fig.suptitle(f'{self.region} {self.catalog1name} - {self.catalog2name} vs. {self.catalogyname}', fontsize = 20)
+            fig.subplots_adjust(top=0.95)
+            plt.savefig(f'{self.image_path}{filename}.png')
+            plt.close()
+
 
         return
 
@@ -1219,7 +1312,8 @@ class Run_Riemann:
         start = self.x_range[0]
 
         x_ranges = []
-        image_path_ = image_path
+        if not image_path: 
+            image_path_ = self.image_path
 
         slopes = []
         errors = []
@@ -1237,11 +1331,12 @@ class Run_Riemann:
             self.n = n
 
             image_path = image_path_
-            image_path = image_path + f"{n}_segments/{i+1}_of_{n}/"
+            image_path2 = image_path + f"{n}_segments/"
+            image_path3 = image_path + f"{i+1}_of_{n}/"
 
-            if not os.path.isdir(image_path):
-                os.makedirs(image_path)
-            self.image_path = image_path
+            if not os.path.isdir(image_path3):
+                os.makedirs(image_path3)
+            self.image_path = image_path3
 
             if not image_path: 
                 slope, d_slope = self.run(ns, perform_plot = True)
@@ -1333,6 +1428,6 @@ class Run_Riemann:
                 plt.axvspan(segment[0], segment[1], alpha=0.1, color=colors[i])
 
             filename = f"{n}_segments_population_plot"
-            plt.savefig(f"{image_path_}{filename}.png")
+            plt.savefig(f"{image_path2}{filename}.png")
 
         return 
