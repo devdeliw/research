@@ -1332,7 +1332,7 @@ class Run_Riemann:
 
             image_path = image_path_
             image_path2 = image_path + f"{n}_segments/"
-            image_path3 = image_path + f"{i+1}_of_{n}/"
+            image_path3 = image_path2 + f"{i+1}_of_{n}/"
 
             if not os.path.isdir(image_path3):
                 os.makedirs(image_path3)
