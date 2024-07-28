@@ -14,8 +14,9 @@ stars around Sagittarius A*.
 
 More specifically, I write statistical models to accurately measure the slope
 of the Red Clump Cluster in the CMDs of the Galactic Center. This involves
-unsharp masking, comparing to theoretical isochrones of increasing extinction,
-binning the CMD and 3D compound-fitting and much more. 
+unsharp masking, generating theoretical stellar isochrones,
+building synthetic red clump clusters, compound fitting, bootstrapping, and
+much more. 
 
 [prev_work/](https://github.com/devdeliw/research/tree/main/prev_work) contains previous JWST messy work, [work/](https://github.com/devdeliw/research/tree/main/work) is current.
 
