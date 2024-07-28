@@ -17,13 +17,14 @@ of the Red Clump Cluster in the CMDs of the Galactic Center. This involves
 unsharp masking, comparing to theoretical isochrones of increasing extinction,
 binning the CMD and 3D compound-fitting and much more. 
 
-[prev_work/](https://github.com/devdeliw/research/tree/main/prev_work) contains previous JWST messy work, **`work` is current**.
+[prev_work/](https://github.com/devdeliw/research/tree/main/prev_work) contains previous JWST messy work, [work/](https://github.com/devdeliw/research/tree/main/work) is current.
 
 We are close to publication so I am compiling all my work into .py files in
-the `work` directory. Within the `work` directory lies a `plots&data` folder
+the `work` directory. Within the `work` directory lies
+a [plots&data/](https://github.com/devdeliw/research/tree/main/work/plots%26data) folder
 which stores all image and data files corresponding to each python file. There
 is also a `flystar` directory which contains code for performing matching
-algorithms, with or without possible coordinate transformations, between two star catalogs.
+algorithms, with or without possible coordinate transformations between two star catalogs.
 
 ### Overview of Code in `work` 
 
