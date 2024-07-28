@@ -23,6 +23,9 @@ bootstrapping.
 stores all the parameters for the algorithm for every wavelength combination in
 every region, along with their corresponding calculated RC slopes with error.
 
+The outputted plots from the red clump algorithm are placed in the
+[plots&data/red_clump_analysis](https://github.com/devdeliw/research/tree/main/work/plots%26data/red_clump_analysis/riemann_plots) directory.
+
 The RC slopes can then be used to accurately derive the extinction law of the
 Galactic Center. 
 
