@@ -35,7 +35,7 @@ for i in ['x_range', 'parallel_cutoff1', 'parallel_cutoff2']:
 # matched star catalog
 fits ='/Users/devaldeliwala/research/work/catalogs/dr2/jwst_init_NRCB.fits'
 catalog = Table.read(fits, format='fits')
-
+ 
 # change only if running sub_populations
 sub_populations = False
 n = 4
@@ -52,7 +52,7 @@ the optimal `n` that minimizes the slope of the RC bar.
 '''
 
 # change, if necessary.
-ns = [8, 9, 10, 11, 12, 13, 14, 15]
+ns = [10, 11, 12, 13, 14, 15]
 
 slopes, d_slopes = [], []
 for index, row in script.iterrows():

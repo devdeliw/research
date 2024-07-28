@@ -6,6 +6,7 @@ from scipy.stats import linregress, norm, tstd, ks_2samp, wasserstein_distance
 from scipy.optimize import curve_fit
 from scipy.ndimage import gaussian_filter
 
+from sklearn.utils import resample
 
 from matplotlib.patches import Rectangle
 import matplotlib.cm as cm
@@ -77,7 +78,7 @@ class Optimize:
         mu, std = norm.fit(self.data)  
 
         # iterates the compound fitting for 8 bins through 20. 
-        for i in range(8, 20): 
+        for i in range(12, 20): 
             amplitude_works = False
             trial_amplitude = 10
             count = 0
@@ -149,7 +150,7 @@ class Optimize:
         maximum_allowed_std = mean_std + 0.1
         allowed_mean_range = [mean_mean - 0.2, mean_mean + 0.2]
 
-        for i in range(8, 20): 
+        for i in range(12, 20): 
             
             amplitude_works = False
             current_amplitude = 10
@@ -179,7 +180,6 @@ class Optimize:
 
                 output_gaussian = models.Gaussian1D(fitted_amplitude, fitted_mean, fitted_std) 
                 output_linear = models.Linear1D(fitted_slope, fitted_inter)
-
                 output_compound = output_gaussian + output_linear
 
                 pdf_values = output_compound(y_values)
@@ -199,12 +199,56 @@ class Optimize:
                    fitted_mean >= allowed_mean_range[0] and fitted_mean < allowed_mean_range[1] and 
                    emd < 0.1): 
 
-                    filtered_data = self.data[(self.data >= fitted_mean - 3 * fitted_std) & (self.data <= fitted_mean + 3 * fitted_std)]
+                    stddev_range_min = fitted_mean - 3 * fitted_std
+                    stddev_range_max = fitted_mean + 3 * fitted_std
               
                     amplitude_works = True
-                    error = fitted_std / math.sqrt(len(filtered_data))
+                    overall_errors = []
 
-                    errors.append(error)
+                    for j in range(int(np.log2(len(self.data)) + 1), 30): 
+                        bin_heights, bin_edges = np.histogram(self.data, bins=j)
+                        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+                        fitted_model = fit(output_compound, bin_centers, bin_heights)
+
+                        predicted_heights = fitted_model(bin_centers)
+                        within_3std_bins = (bin_centers >= stddev_range_min) & (bin_centers <= stddev_range_max)
+                        linear_predicted_heights = predicted_heights[~within_3std_bins]
+
+                        if len(linear_predicted_heights) > 1: 
+                            linear_residuals = bin_heights[~within_3std_bins] - linear_predicted_heights
+                            linear_std = np.std(linear_residuals)
+
+                            gaussian_points = np.sum(bin_heights[within_3std_bins])
+                            gaussian_error = fitted_std / np.sqrt(gaussian_points)
+
+                            linear_points = np.sum(linear_predicted_heights)
+                            linear_error = linear_std / np.sqrt(linear_points)
+
+                            num_stars = gaussian_points + linear_points
+
+                            linear_weight = linear_points / num_stars
+                            gaussian_weight = gaussian_points / num_stars
+
+                            overall_error = np.sqrt(gaussian_weight * gaussian_error ** 2 + linear_weight * linear_error ** 2)
+                            overall_errors.append(overall_error)
+                        else: 
+                            
+                            n_iterations = 50
+
+                            bootstrap_means = []
+                            for j in range(n_iterations):
+                                sample_data = resample(self.data, replace=True)
+                                
+                                bin_heights, bin_edges = np.histogram(sample_data, bins=int(np.sqrt(len(self.data))))
+                                bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+                                
+                                fitted_model = fit(output_compound, bin_centers, bin_heights)
+                                bootstrap_means.append(fitted_model.mean_0.value)
+
+                            overall_errors.append(np.std(bootstrap_means))
+
+                    errors.append(min(overall_errors))
                     bins.append(i)
                     amplitudes.append(fitted_amplitude)
                     means.append(fitted_mean)
@@ -777,12 +821,12 @@ class Analysis:
             plt.plot(midpoints, [inter + i * slope for i in midpoints], 'r-', label = 'linear fit')
             plt.scatter(midpoints, means, c = 'cyan', s = 20, marker = 'x', label = 'means')
 
-            errors = [error * 50 for error in errors]
+            errors = [error * 20 for error in errors]
             plt.errorbar(midpoints, means, yerr=errors, color="cyan", capsize=2, capthick=1, lw = 1, ls = 'none')
 
             plt.legend()
             plt.gca().invert_yaxis()
-            plt.title(f"Fitted Slope: {slope.round(3)} ± {d_slope.round(3)}. Error Bars scaled 50x. ", fontsize = 15)
+            plt.title(f"Fitted Slope: {slope.round(3)} ± {d_slope.round(3)}. Error Bars scaled 20x. ", fontsize = 15)
 
             error_above, error_below = [], []
 
@@ -790,8 +834,8 @@ class Analysis:
                 error_above.append(means[i] + errors[i])
                 error_below.append(means[i] - errors[i])
 
-            def poly2d(x, a, b, c): 
-                return a + b*x + c*x**2 
+            def poly2d(x, a, b, c, d, e, f, g, h): 
+                return a + b*x + c*x**2 + d*x**3 + e*x**4 + f*x**5 + g*x**6 + h*x**7
 
             coefs_poly2d_above, pcov = curve_fit(poly2d, midpoints, error_above)
             coefs_poly2d_below, pcov = curve_fit(poly2d, midpoints, error_below)
