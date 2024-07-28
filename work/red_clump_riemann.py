@@ -43,6 +43,11 @@ class Optimize:
     name    : str
             name of the data for display use.
 
+    bootstrap : bool 
+            determines whether bootstrapping is used to calculate error on the mean 
+            note that if set to `True`, the error calculation is *much* more computationally 
+            intensive
+
     verbose : bool 
             if you wish to print out the optimal bitting parameters and other information
             while the code is running
@@ -66,10 +71,11 @@ class Optimize:
 
     """
 
-    def __init__(self, data, name, verbose): 
+    def __init__(self, data, bootstrap, name, verbose): 
 
         self.data = data
         self.name = name
+        self.bootstrap = bootstrap
         self.verbose = verbose
 
     def determine_std(self): 
@@ -78,7 +84,7 @@ class Optimize:
         mu, std = norm.fit(self.data)  
 
         # iterates the compound fitting for 8 bins through 20. 
-        for i in range(12, 20): 
+        for i in range(8, 20): 
             amplitude_works = False
             trial_amplitude = 10
             count = 0
@@ -145,12 +151,12 @@ class Optimize:
 
         mean_std, mean_mean = self.determine_std()
 
-        # if a fit outputs a standard deviation above the mean + 0.1, it is likely unsuccesful
+        # if a fit outputs a stddev above the mean stddev + 0.1, it is likely unsuccesful
         # the threshold of 0.1 was determined myself through many iterations
         maximum_allowed_std = mean_std + 0.1
         allowed_mean_range = [mean_mean - 0.2, mean_mean + 0.2]
 
-        for i in range(12, 20): 
+        for i in range(8, 20): 
             
             amplitude_works = False
             current_amplitude = 10
@@ -205,48 +211,56 @@ class Optimize:
                     amplitude_works = True
                     overall_errors = []
 
-                    for j in range(int(np.log2(len(self.data)) + 1), 30): 
-                        bin_heights, bin_edges = np.histogram(self.data, bins=j)
-                        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+                    if self.bootstrap: 
 
-                        fitted_model = fit(output_compound, bin_centers, bin_heights)
+                        # you can change, I have found 100 to be fairly accurate for my purposes
+                        # less iterations makes bootstrapping much faster, but less accurate
+                        n_iterations = 100
 
-                        predicted_heights = fitted_model(bin_centers)
-                        within_3std_bins = (bin_centers >= stddev_range_min) & (bin_centers <= stddev_range_max)
-                        linear_predicted_heights = predicted_heights[~within_3std_bins]
-
-                        if len(linear_predicted_heights) > 1: 
-                            linear_residuals = bin_heights[~within_3std_bins] - linear_predicted_heights
-                            linear_std = np.std(linear_residuals)
-
-                            gaussian_points = np.sum(bin_heights[within_3std_bins])
-                            gaussian_error = fitted_std / np.sqrt(gaussian_points)
-
-                            linear_points = np.sum(linear_predicted_heights)
-                            linear_error = linear_std / np.sqrt(linear_points)
-
-                            num_stars = gaussian_points + linear_points
-
-                            linear_weight = linear_points / num_stars
-                            gaussian_weight = gaussian_points / num_stars
-
-                            overall_error = np.sqrt(gaussian_weight * gaussian_error ** 2 + linear_weight * linear_error ** 2)
-                            overall_errors.append(overall_error)
-                        else: 
+                        bootstrap_means = []
+                        for k in range(n_iterations):
+                            sample_data = resample(self.data, replace=True)
                             
-                            n_iterations = 50
+                            bin_heights, bin_edges = np.histogram(sample_data, bins=int(np.sqrt(len(self.data))))
+                            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+                            
+                            fitted_model = fit(output_compound, bin_centers, bin_heights)
+                            bootstrap_means.append(fitted_model.mean_0.value)
 
-                            bootstrap_means = []
-                            for j in range(n_iterations):
-                                sample_data = resample(self.data, replace=True)
-                                
-                                bin_heights, bin_edges = np.histogram(sample_data, bins=int(np.sqrt(len(self.data))))
-                                bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-                                
-                                fitted_model = fit(output_compound, bin_centers, bin_heights)
-                                bootstrap_means.append(fitted_model.mean_0.value)
+                        overall_errors.append(np.std(bootstrap_means))
 
-                            overall_errors.append(np.std(bootstrap_means))
+                    else:
+                        for j in range(int(np.sqrt(len(self.data))), int(np.sqrt(len(self.data))) + 10): 
+                            bin_heights, bin_edges = np.histogram(self.data, bins=j)
+                            bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+                            fitted_model = fit(output_compound, bin_centers, bin_heights)
+
+                            predicted_heights = fitted_model(bin_centers)
+                            within_3std_bins = (bin_centers >= stddev_range_min) & (bin_centers <= stddev_range_max)
+                            linear_predicted_heights = predicted_heights[~within_3std_bins]
+
+
+                            if len(linear_predicted_heights) > 1: 
+                                linear_residuals = bin_heights[~within_3std_bins] - linear_predicted_heights
+                                linear_std = np.std(linear_residuals)
+
+                                gaussian_points = np.sum(bin_heights[within_3std_bins])
+                                gaussian_error = fitted_std / np.sqrt(gaussian_points)
+
+                                linear_points = np.sum(linear_predicted_heights)
+                                linear_error = linear_std / np.sqrt(linear_points)
+
+                                num_stars = gaussian_points + linear_points
+
+                                linear_weight = linear_points / num_stars
+                                gaussian_weight = gaussian_points / num_stars
+
+                                overall_error = np.sqrt(gaussian_weight * gaussian_error ** 2 + linear_weight * linear_error ** 2)
+                                overall_errors.append(overall_error)
+
+                            else: 
+                                overall_errors.append(fitted_std / np.sqrt(len(self.data)))
 
                     errors.append(min(overall_errors))
                     bins.append(i)
@@ -377,6 +391,9 @@ class Analysis:
                     
                     the upper directory you wish to store all generated plots in 
 
+    bootstrap       : bool
+                    determines whether bootstrapping is used for mean error calculation
+
     verbose         : bool 
                     
                     if you wish to see extra info while the code is running
@@ -462,7 +479,7 @@ class Analysis:
     def __init__(self, catalog1, catalog2, 
                  catalog1name, catalog2name, catalogyname, 
                  region, parallel_cutoff1, parallel_cutoff2, 
-                 x_range, n, image_path, verbose = False): 
+                 x_range, n, image_path, bootstrap = False, verbose = False): 
 
         self.catalog1 = catalog1
         self.catalog2 = catalog2
@@ -475,6 +492,7 @@ class Analysis:
         self.x_range = x_range
         self.n = n
         self.image_path = image_path 
+        self.bootstrap = bootstrap
         self.verbose = verbose
         self.count = 0
 
@@ -578,8 +596,6 @@ class Analysis:
 
         bins = np.array(([current_x, current_x + dx], [yi, yf]))
 
-        print(bins)
-
         return bins, segment
 
     def extract_stars(self, bin_x_range, verbose = True): 
@@ -623,15 +639,15 @@ class Analysis:
         if self.catalogyname == self.catalog2name: 
 
             y = np.array(starlist[starlist.columns[1]][0])
-            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, optimal_slope, optimal_inter = Optimize(y, 
-                                                                                                starlist.columns[1], 
+            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, optimal_slope, optimal_inter = Optimize(data = y, 
+                                                                                                name = starlist.columns[1], bootstrap = self.bootstrap,
                                                                                                 verbose = True
                                                                                         ).optimize_bin()
         if self.catalogyname == self.catalog1name: 
 
             y = np.array(starlist[starlist.columns[0]][0])
-            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, optimal_slope, optimal_inter = Optimize(y, 
-                                                                                                starlist.columns[0], 
+            optimal_error, optimal_bin, optimal_amplitude, optimal_mean, optimal_std, optimal_slope, optimal_inter = Optimize(data = y, 
+                                                                                                name = starlist.columns[0], bootstrap = self.bootstrap,
                                                                                                 verbose = True
                                                                                         ).optimize_bin()
 
@@ -695,6 +711,9 @@ class Analysis:
 
         self.red_clump_mags = rc_mags
         self.red_clump_x = rc_x
+        self.succesful_bin_parameters = succesful_bin_parameters
+        self.bins = bins 
+        self.y = y 
 
         return succesful_bin_parameters, bins, y
 
@@ -834,8 +853,8 @@ class Analysis:
                 error_above.append(means[i] + errors[i])
                 error_below.append(means[i] - errors[i])
 
-            def poly2d(x, a, b, c, d, e, f, g, h): 
-                return a + b*x + c*x**2 + d*x**3 + e*x**4 + f*x**5 + g*x**6 + h*x**7
+            def poly2d(x, a, b, c, d): 
+                return a + b*x + c*x**2 + d*x**3 
 
             coefs_poly2d_above, pcov = curve_fit(poly2d, midpoints, error_above)
             coefs_poly2d_below, pcov = curve_fit(poly2d, midpoints, error_below)
@@ -868,8 +887,12 @@ class Analysis:
 
     def residuals(self): 
 
-        succesful_bin_parameters, bins, y = self.analysis()
-        slope, intercept, *errors = self.slope(show_plot = True)
+        slope = self.slope_value 
+        intercept = self.inter_value
+
+        succesful_bin_parameters = self.succesful_bin_parameters
+        bins = self.bins 
+        y = self.y
 
         starlist_full = []
 
@@ -984,8 +1007,11 @@ class Analysis:
             print("‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾")
             print("\n")
 
-            succesful_bin_parameters, bins, y = self.analysis()
-            slope, intercept, d_slope, d_inter = self.slope(show_plot = False)
+            slope, intercept, d_slope, d_inter = self.slope(show_plot = True)
+
+            succesful_bin_parameters = self.succesful_bin_parameters
+            bins = self.bins 
+            y = self.y
 
             if d_slope < optimal_slope_error: 
                 optimal_slope_error = d_slope
@@ -1292,7 +1318,7 @@ class Run_Riemann:
         catalog2zp=catalog2zp 
     )   
 
-    class_.run(ns = ns)
+    class_.run(ns = ns, bootstrap = False)
 
     """
 
@@ -1316,11 +1342,25 @@ class Run_Riemann:
         self.catalog1zp = catalog1zp
         self.catalog2zp = catalog2zp
 
-    def run(self, ns, perform_plot = True, perform_residuals = True, perform_KS = True):
+    def run(self, ns, bootstrap = False, perform_plot = True, perform_residuals = True, perform_KS = True):
+
+        '''
+        if bootstrap set to `True`: 
+            uses bootstrapping to calculate the error on the means. 
+            note that this is *much* more computationally intensive 
+            and generally does not deviate much from regular calculation
+        '''
         
         catalog1, catalog2, *errors = get_matches(self.catalog, self.catalog1name, 
                                                   self.region1, self.catalog2name, self.region2
                                       )
+
+        if bootstrap: 
+            print('\n')
+            print('Performing Bootstrap Analysis')
+        else: 
+            print('')
+            print('Performing Regular Analysis')
 
         if self.catalog1zp: 
             catalog1 += self.catalog1zp
@@ -1330,12 +1370,14 @@ class Run_Riemann:
         class_ = Analysis(catalog1, catalog2, 
                           self.catalog1name, self.catalog2name, self.catalogyname, self.region1,
                           self.parallel_cutoff1, self.parallel_cutoff2, self.x_range, 
-                          n = self.n, image_path = self.image_path, verbose = True
+                          n = self.n, image_path = self.image_path, bootstrap = bootstrap, verbose = True
         )
 
         slope, d_slope = 0, 0
 
+        print('')
         print(f"{self.region1} {self.catalog1name} -  {self.region2} {self.catalog2name} vs. {self.regiony} {self.catalogyname}")
+        print('')
 
         if self.show_hists: 
             slope, d_slope = class_.run_optimal_bin(ns, show_hists = True, 
@@ -1350,7 +1392,7 @@ class Run_Riemann:
 
         return slope, d_slope
 
-    def sub_populations(self, n, ns, image_path = False, show_populations = True):
+    def sub_populations(self, n, ns, image_path = False, show_populations = True, bootstrap = False):
 
         dx = (self.x_range[1] - self.x_range[0]) / n 
         start = self.x_range[0]
@@ -1365,9 +1407,9 @@ class Run_Riemann:
 
         for i in range(n): 
 
-            print(f"\n\n")
+            print(f"")
             print(f"Running Population Segment {i+1} of {n}")
-            print(f"\n\n")
+            print(f"")
 
             self.x_range = [start, start + dx]
             x_ranges.append(self.x_range)
@@ -1383,13 +1425,13 @@ class Run_Riemann:
             self.image_path = image_path3
 
             if not image_path: 
-                slope, d_slope = self.run(ns, perform_plot = True)
+                slope, d_slope = self.run(ns, perform_plot = True, bootstrap = bootstrap)
 
                 slopes.append(slope)
                 errors.append(d_slope)
 
             if image_path: 
-                slope, d_slope = self.run(ns, perform_plot = True)
+                slope, d_slope = self.run(ns, perform_plot = True, bootstrap = bootstrap)
 
                 slopes.append(slope)
                 errors.append(d_slope)

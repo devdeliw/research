@@ -24,7 +24,7 @@ image_path_riemann = '/Users/devaldeliwala/research/work/plots&data/red_clump_an
 # access script 
 script = pd.read_csv("red_clump_analysis_script.csv")
 
-#drops = [i for i in range(3)]
+#drops = [i for i in range(1)]
 #script = script.drop(drops)
 #print(script)
 
@@ -52,7 +52,7 @@ the optimal `n` that minimizes the slope of the RC bar.
 '''
 
 # change, if necessary.
-ns = [10, 11, 12, 13, 14, 15]
+ns = [12, 14, 16, 18]
 
 slopes, d_slopes = [], []
 for index, row in script.iterrows():
@@ -128,7 +128,11 @@ for index, row in script.iterrows():
 
 	# run the algorithm
 	if not sub_populations: 
-		slope, d_slope = class_.run(ns = ns)
+
+		# if bootstrap set to True, use bootstrapping to calculate 
+		# error on the means -- note this takes *much* longer to run
+
+		slope, d_slope = class_.run(ns = ns, bootstrap = False)
 
 		# store output slopes 
 		slopes.append(slope)
@@ -145,6 +149,20 @@ if not sub_populations:
 	# output script with final calculated slopes and errors
 	script.to_csv('red_clump_analysis_script_2.csv')
 
+
+'''n_iterations = 20
+
+                            bootstrap_means = []
+                            for k in range(n_iterations):
+                                sample_data = resample(self.data, replace=True)
+                                
+                                bin_heights, bin_edges = np.histogram(sample_data, bins=int(np.sqrt(len(self.data))))
+                                bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+                                
+                                fitted_model = fit(output_compound, bin_centers, bin_heights)
+                                bootstrap_means.append(fitted_model.mean_0.value)
+
+                            overall_errors.append(np.std(bootstrap_means))'''
 
 
 
