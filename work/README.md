@@ -1,4 +1,4 @@
-### File Information
+[###](###) File Information
 
 ---
 
@@ -13,7 +13,7 @@ overlays them on generated color magnitude diagrams generated from
 - [red_clump_riemann.py](https://github.com/devdeliw/research/blob/main/work/red_clump_riemann.py)
 and the rest of the `red_clump` files are the pinnacle of my research thus far.
 Together they allow a user to input a CMD, along with a few other parameters,
-and outputs the slope of the RC bar with error without extremely any
+and outputs the slope of the RC bar with error without any
 significant eye-dependence. 
 
 It works by tiling segments of the RC bar and performing my Optimized Curve
