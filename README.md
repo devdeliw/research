@@ -17,7 +17,7 @@ of the Red Clump Cluster in the CMDs of the Galactic Center. This involves
 unsharp masking, comparing to theoretical isochrones of increasing extinction,
 binning the CMD and 3D compound-fitting and much more. 
 
-`messy_jwst_exintction` and `messy_jwst` are both  previous JWST messy work, **`work` is current**.
+[prev_work/](https://github.com/devdeliw/research/tree/main/prev_work) contains previous JWST messy work, **`work` is current**.
 
 We are close to publication so I am compiling all my work into .py files in
 the `work` directory. Within the `work` directory lies a `plots&data` folder
