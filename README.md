@@ -24,7 +24,7 @@ is also a `flystar` directory which contains code for performing matching
 algorithms, with or without possible coordinate transformations between two star catalogs.
 
 To see a current writeup of my algorithm, visit
-[website](https://dev-undergrad.dev/ocf_writeup.pdf).  
+[my website](https://dev-undergrad.dev/ocf_writeup.pdf).  
 
 
 I utilize [SPISEA](https://spisea.readthedocs.io) developed by Hosek+18 et al. to derive 

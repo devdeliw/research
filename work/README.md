@@ -30,6 +30,6 @@ The RC slopes can then be used to accurately derive the extinction law of the
 Galactic Center. 
 
 To see a current writeup of my algorithm thus far, visit
-[website](https://dev-undergrad.dev/ocf_writeup.pdf). 
+[my website](https://dev-undergrad.dev/ocf_writeup.pdf). 
 
 
