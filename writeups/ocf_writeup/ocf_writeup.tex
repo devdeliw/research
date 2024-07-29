@@ -1,0 +1,485 @@
+\documentclass[svgnames]{article}     % use "amsart" instead of "article" for AMSLaTeX format
+%\geometry{landscape}                 % Activate for rotated page geometry
+
+%\usepackage[parfill]{parskip}        % Activate to begin paragraphs with an empty line rather than an indent
+
+\usepackage{graphicx}                 % Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+
+%maths                                % TeX will automatically convert eps --> pdf in pdflatex
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{esint}
+\usepackage{geometry}
+\usepackage{fontawesome5}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=magenta,
+    filecolor=magenta,
+    urlcolor=magenta,
+    }
+
+% Inverting Color of PDF
+%\usepackage{xcolor}
+%\pagecolor[rgb]{0.19,0.19,0.19}
+%\color[rgb]{0.77,0.77,0.77}
+
+%noindent
+%\setlength\parindent{0pt}
+
+%pgfplots
+\usepackage{pgfplots}
+
+%images
+\graphicspath{{/Users/devaldeliwala/research/paper_presentation/ocf_writeup/images/}}                   % Activate to set a image directory
+
+%tikz
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
+\usepackage{comment}
+\usetikzlibrary{arrows}
+\usepackage[most]{tcolorbox}
+
+%Figures
+\usepackage{float}
+\usepackage{caption}
+\usepackage{lipsum}
+
+
+\title{Optimized Curve Fitting (OCF) Algorithm}
+\author{Deval Deliwala}
+\date{}                              % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+%\section{}
+%\subsection{}
+%\tableofcontents                     % Activate to display a table of contents
+
+\begin{center}
+  GOAL \\ \vspace{5px}
+\end{center}
+
+The Optimized Curve Fitting (OCF) algorithm aims to determine the slope of the
+Red Clump (RC) cluster in a color-magnitude diagram (CMD) with minimal manual
+intervention. Traditional methods often rely on visual adjustments and unsharp
+masking techniques to identify the RC slope, leading to potential
+inconsistencies and biases. The OCF algorithm provides a systematic and
+reproducible approach to identifying the RC slope by segmenting the RC bar into
+defined tiles and iteratively fitting compound models on the extracted star data.
+
+\section{Procedure}
+
+\subsection{Inputs \& Parameters}
+
+The algorithm requires the following inputs: 
+
+\begin{itemize}
+  \item[1.] \textbf{Star Catalogs}:\\ Two matched star catalogs, designated as
+    \verb|catalog1| and \verb|catalog2|, are used to generate the CMD. The CMD
+  is plotted as \verb|catalog1| $-$ \verb|catalog2| vs. \verb|catalogy|,
+  where \verb|catalogy| is either \verb|catalog1| or \verb|catalog2|. 
+\item[2.] \textbf{Initial Parallel Cutoffs}:\\ A set of parallel lines that
+  \textit{roughly} delineate the RC slope. These lines do not need to be highly
+  precise but should tightly bound the RC bar. 
+\item[3.] \textbf{$x$-Range Cutoff}:\\ The range in the $x$-axis color space that
+  defines the width of the RC bar. 
+\item[4.] \textbf{Tile Count $n$}:\\ An integer specifying the number of
+  segments/tiles to divide the RC bar. 
+\end{itemize}
+
+The provided inputs for an example CMD are visually represented in Figure 1, illustrating the
+parallel and $x$-range cutoff used to bound the RC cluster. 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = \textwidth]{F115W-F212N-vsF115W_cutoff.png}
+    \caption{Example NRCB1 $F115W - F212N$ vs. $F115W$ provided cutoffs}
+\end{figure}
+
+\subsection{Preliminary Steps}
+
+\subsubsection{Extend Parallel Cutoffs} 
+
+The algorithm begins by extending the width of the initial parallel lines by
+a factor of 3, allowing for a broader range of stars to be included in the
+analysis. The expanded lines are also shown in Figure 1 in blue.
+
+\subsubsection{Generate the First Tile} 
+
+Using the extended parallel lines and the specified tile count $n$, the
+algorithm generates a \textit{starting tile} of width \verb|x_range| / $n$. It
+is placed at the left-most end of the provided \verb|x-range|, in between the parallel cutoffs,
+extending horizontally by the calculated tile width in a left-riemann
+fashion. An example starting bin for $n = 9$ is shown in Figure 2 below. 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 9cm]{starting_bin.png}
+    \caption{Starting bin for $n = 9$} 
+\end{figure}
+
+\subsubsection{Extract Stars from Starting Tile} 
+
+The algorithm then extracts the indices of stars that fall within the bounds of
+the first tile. The corresponding magnitudes from \verb|catalog1| and
+\verb|catalog2| are retrieved and these stars are compiled into a pandas
+DataFrame object for subsequent analysis. 
+
+\subsection{OCF Algorithm} 
+
+Once the magnitudes of the stars in the starting bin have been extracted, teh
+algorithm proceeds to the OCF phase for this specific bin. The primary goal of
+OCF is to produce a compound model using the \verb|astropy.models| library that
+fits the hitogram of \verb|catalogy| magnitude data optimally, thereby
+minimizing the error of the mean magnitude for stars in that bin. 
+
+The compound model used consists of a Gaussian component (\verb|Gaussian1D()|)
+and a linear component (\verb|Linear1D()|). This combination is chosen because
+it allows the mean magnitude to be calculated more accurately by focusing the
+Gaussian fit on the dense region of stars, while the linear component accounts
+for outliers and stars outside the dense region. 
+
+\subsubsection{Compound Model Parameters} 
+
+A compound \verb|Gaussian1D() + Linear1D()| model requires five parameters: 
+
+\begin{itemize}
+  \item[1.] Gaussian Component: 
+    \begin{itemize}
+      \item[-] Amplitude
+        \item[-] Mean 
+          \item[-] Standard Deviation
+    \end{itemize}
+  \item[2.] Linear Component: 
+    \begin{itemize}
+      \item[-] Slope
+        \item[-] Intercept
+    \end{itemize}
+\end{itemize}
+
+The objective of OCF is to determine the optimal values for these parameters
+for a compound model such that the error in the model's returned mean parameter
+is minimized.
+
+\subsubsection{OCF Steps}
+
+The OCF Algorithm employs two main iterative steps to achieve optimal fitting: 
+
+\begin{itemize}
+  \item[1.] \textbf{Looser-Requirement Iterative Compound Fitting}:\\
+  - This step aims to determine suitable initial parameter values for the
+  Gaussian mean and standard deviation. It uses the overall mean and standard
+  deviation from the generic \\ \verb|scipy.stats.norm.fit()| fit as starting
+  parameters for the compound models. 
+
+  - The algorithm iterates through trial compound fits of increasing amplitude,
+  accepting every fit that meet loose requirements for the returned standard
+  deviation and amplitude. These fits help to calculate a more precise mean and
+  standard deviation, which are used as the input parameters for the compound
+  models in the next step. 
+
+  \item[2.] \textbf{Strict Requirement Iterative Compound Fitting}:\\ 
+  - Using the mean and standard deviation parameters from the previous step as
+  more precise model input parameters, this phase generates new compound models
+  and again, iterates through various increasing amplitude values. 
+
+  - The algorithm employs much more strict requirements on the returned fitting
+  values, ensuring the returned parameters (mean, standard deviation,
+  amplitude) fall within acceptable ranges that ensure the fit was a success.
+
+  - In addition to the returned fitting parameter requirements, a synthetic
+  dataset is also generated to produce a histogram that similarly follows the
+  shape of compound model. The stricter requirements also require
+  a \verb|ks_statistic| and an earth mover's distance \verb|EMD_metric| to fall
+  within acceptable ranges that guarantee the model's goodness-of-fit. 
+
+  - Parameters from successful fits are stored for further analysis. 
+\end{itemize}
+
+\subsubsection{Error Calculation} 
+
+If a compound model passes the strict requirements, the error of the mean is
+calculated using one of two methods, allowing the user to choose. 
+
+\begin{itemize}
+  \item[1.] \textbf{Bootstrapping}: \\
+  This method is computationally intensive and involves repeatedly resampling
+  the data and fitting the compound model to histograms of each resampled
+  dataset. The variance of the mean is estimated from the standard deviation of
+  the returned mean parameters of every fit. 
+\item[2.] \textbf{Weighted Gaussian and Linear Error Calculation}: \\
+  For the Gaussian part of the compound mode, the error is calculated as 
+  \[
+    \varepsilon_\text{Gaussian} = \frac{\sigma_\text{Gaussian}}{\sqrt{N_\text{Gaussian} }}
+  \] \vspace{3px}
+  
+  where $N_\text{Gaussian} $ is the number of stars within three standard deviations
+  ($\sigma_\text{Gaussian} $) of the
+  returned mean. 
+
+  For the Linear part, the error is derived from the standard deviation of histogram bin residuals
+  for bins outside the Gaussian region. The linear error is calculated as 
+
+   \[
+     \varepsilon_\text{Linear}
+     = \frac{\sigma_\text{Linear}}{\sqrt{N_\text{Linear}}}
+  \] \vspace{3px}
+  
+  where $N_\text{Linear} $ is the number of stars under the linear-part of the
+  fit. 
+
+  These errors are then weighted by the ratio of stars under each part of the
+  model: 
+
+  \[
+  \varepsilon_\text{overall} = \sqrt{\verb|gaussian_weight| \cdot
+  {\varepsilon_\text{Gaussian}}^2 + \verb|linear_weight| \cdot
+{\varepsilon_\text{Linear}}^2}
+  \] \vspace{3px}
+  
+  This error calculation is repeated for histogram bin numbers in the range of
+  $\verb|int(|\sqrt{N_\text{total}}\verb|)|$ to
+  $\verb|int(|\sqrt{N_\text{total}} + 10\verb|)|$. The minimum error from these
+  calculations is chosen as the overall error. I have found this error almost
+  nearly matches the error derived via bootstrapping for most cases. This runs
+  much faster however. 
+\end{itemize}
+
+The entire OCF algorithm is repeated for initial \verb|catalogy| histogram bin
+numbers ranging from eight to twenty. This is to ensure the optimal successful
+bin parameters are found, as increasing the number of histogram bins affects
+the generated compound models.
+
+After completing all the compound fitting iterations, the algorithm selects the
+parameters of the fit that correspond to the minimum error. These optimized
+parameters provide an accurate and reliable mean magnitude for the starting
+bin.
+
+\subsubsection{Handling OCF Algorithm Failures} 
+
+There is a possibility that the OCF algorithm might fail to find any successful
+compound models, even after iterating through various amplitude values. The
+primary reason for this failure is often the lack of sufficient stars in the
+bin to fit an effective \verb|Gaussian1D() + Linear1D()| compound model. 
+
+To address this issue, the algorithm includes a mechanism to extend the bin in
+color-space and reattempt the fitting process: 
+
+\begin{itemize}
+  \item[1.] \textbf{Initial Failure Handling}: \\
+    - If the OCF Algorithm fails for the starting bin, it extends the bin by 0.1
+    in color-space of the CMD to include more stars. 
+
+    - The algorithm then again extracts the stars in the new, larger bin and
+    re-runs the OCF algorithm on the extended bin. 
+  \item[2.] \textbf{Iterative Expansion}: \\
+    - If the OCF algorithm fails again, the bin is extended another 0.1 in
+    color-space. 
+
+    - This process is repeated up to 7 times, each time extending the bin by 0.1,
+    to include a progressively larger number of stars. 
+  \item[3.] \textbf{Final Failure Condition}: \\
+    - If the OCF algorithm to find a successful compound model after 7 extensions
+    (a total extension of 0.7), it indicates a deeper issue.  
+
+    - In this case, the failure is likely due to improper initial cutoffs
+    ($x$-range / parallel line parameters). From my experience it is mainly
+    from the parallel line parameters, after the 3x width increase, extending
+    into the main-sequence part of the CMD, which prevents a single one-peak
+    compound model from succeeding. 
+\end{itemize} 
+
+After completing the OCF algorithm for the starting bin, the algorithm proceeds
+by generating a new bin starting at the end of the previous bin. This new bin
+similarly begins having a width of \verb|x_range| / $n$, and OCF is again
+implemented on the new bin. This iterative process continues, with each new bin
+starting where the previous one ends, until the rightmost $x$ value of a bin
+exceeds the end of the provided $x$-range. OCF is applied one last time to this
+final bin and the algorithm concludes. 
+
+After a successful OCF run across the RC cluster, the algorithm outputs a plot
+like the one below for the example CMD: 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 9.8cm]{F115W-F212N-vsF115W_result-hist.png}
+\end{figure}
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 9.8cm]{F115W-F212N-vsF115W_result.png}
+\end{figure}
+
+The slope is finally calculated using a weighted
+\verb|scipy.optimize.curve_fit()| linear fit which produces the following plot
+in Figure 3: 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = \textwidth]{F115W-F212N-vsF115W_slope.png}
+    \caption{Calculated Slope using OCF algorithm for example CMD. Note that
+    the Error Bars are scaled by 20x.}
+\end{figure}
+
+\subsection{Goodness-of-Fit Assesment for Entire Compound Model Fitting}
+
+To ensure the accuracy and reliability of the derived RC (Red Clump) slope from
+the multi-compound model fitting, we assess the goodness-of-fit by generating a 
+synthetic RC cluster using the optimized compound models and performing
+subsequent statistical tests. 
+
+\begin{itemize}
+  \item[1.] \textbf{Generating Synthetic RC Clusters}: \\
+    - For each tile of the RC cluster, a synthetic RC cluster is generating
+    using its corresponding optimized compound model. 
+    
+    - This synthetic cluster is designed to mimic the distribution of the
+    actual RC tile. Example synthetic RC Tile clusters are shown in Figure 4. 
+\item[2.] \textbf{Performing the Kolmogorov-Smirnov (KS) Test}: \\
+    - The KS test is employed to statistically compare the entire collection of
+    synthetic RC clusters against the actual RC cluster. 
+    
+    - This test evaluates the goodness-of-fit by calculating the distance
+    (\verb|ks_statistic|)
+    between the empirical
+    cumulative distribution functions (CDFs) of the synthetic and actual RC
+    clusters. 
+
+    - A good fit, based on the KS test, thus has a \verb|ks_statistic| close to
+    0. 
+ \item[3.] \textbf{Plotting CDFs and Density Plots}: \\
+   - To visually inspect the similarity between the synthetic and actual RC
+   clusters, CDFs and density plots are generated. 
+
+   - These plots help in identifying any significant deviations between the
+   distributions of the synthetic and actual RC clusters. 
+
+   - Example CDF and Density Plots are shown in Figure 5 and 6, respectively. 
+\end{itemize}
+
+When plotted using identical $x$-values, the synthetic cluster appears visually
+distinct from the actual RC cluster. This difference arises because each tile
+is generated from a single optimized compound model, resulting in a synthetic
+cluster that only follows the characteristics (histogram) of that model rather than the
+exact visual traits of the actual RC cluster. But for the purposes of
+calculating the mean, the histograms closely resembling each other is what
+matters. 
+
+After the goodness-of-fit has been established, several statistical plots can
+be generated: 
+
+\subsubsection{Plotting Synthetic vs. Actual RC clusters on Example CMD} 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 11cm]{plot_hexbin.png}
+    \caption{Hexbin plots comparing synthetic vs. actual RC tile data for tiles
+    12 and 13 from an $n=18$ run.}
+\end{figure}
+
+\subsubsection{Plotting CDFs} 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 11cm]{plot_cdf.png}
+    \caption{Overlaid synthetic \& actual CDFs for tiles 12 and 13 from an
+    $n=18$ run.}
+\end{figure}
+
+\subsubsection{Plotting Densities} 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 11cm]{plot_kde.png}
+    \caption{Overlaid density plots generated using a KDE for tiles 12 and 13
+    from an $n=18$ run.}
+\end{figure}
+
+
+And finally, plotting the residuals which as a histogram, should resemble
+a Gaussian.
+
+\subsubsection{Plotting Residuals} 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = \textwidth]{F115W-F212N-vsF115W_residual.png}
+    \caption{Residuals from the calculated linear fit from the OCF algorithm
+    from an $n=18$ run.}
+\end{figure}
+
+\subsection{Running the Algorithm} 
+
+The algorithm requires an input parameter $n$, an integer telling the algorithm
+how many tiles to segment the RC bar into. However, different values of $n$
+could result in calculating different slopes. 
+
+For this reason, the algorithm lets a user input an array of different $n$s
+they wish to run the algorithm for. It then finds the optimal $n$ such that the
+\textit{slope}-error is minimized and generates the above plots for the optimal
+$n$ value. 
+
+It also generates a plot like below, allowing one to compare the results of
+different $n$ and any patterns that emerge across calculated slopes and errors
+as $n$ increases. 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = \textwidth]{F115W-F212N-vsF115W_[8, 9, 10, 11, 12, 13, 14, 15].png}
+    \caption{Comparing OCF slope and error results across different $n$}
+\end{figure}
+
+
+
+
+
+
+
+
+\newpage
+\section{Alternative OCF Algorithm -- Rectangles} 
+
+For CMDs that look like this: 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = \textwidth]{F212N-F323N-vsF212N_cutoff.png}
+    \caption{NRCB1 F212N - F323N vs. F212 CMD}
+\end{figure}
+
+where it is potentially difficult to confidently generate the required parallel
+line RC cutoff input parameters for the tiled-OCF algorithm detailed above,  there
+is another option using an overall rectangular cutoff rather than two parallel
+cutoffs.
+
+This is fairly self-explanatory. Rather than generating tiled-bins that follow
+the parallel lines across the slope of the RC, the algorithm generates
+equal-height tiles that span the RC cluster. This method replaces the parallel
+cutoff input parameters with an \verb|xlim| and \verb|ylim| parameter that
+defines the overall rectangular RC cutoff within which the tiles are generated.
+\\ 
+
+The rest of the OCF algorithm is identical. \\
+
+Note that this method is discouraged as the main method of calculating RC
+slopes. I recommend using this method only to calculate a slope from which the
+parallel cutoffs of the first method can better be determined. Usually though,
+unsharp-masking is more than good enough.
+
+In addition, more often than not, it is impossible to generate a perfect
+rectangle RC cutoff using an \verb|xlim| and a \verb|ylim| that does not cross
+into the main-sequence portion of the CMD (which would fail the OCF algorithm). 
+
+\vfill
+
+\href{https://github.com/devdeliw/research/tree/main/work}{\faGithub} --
+\verb|red_clump_riemann.py|, \verb|red_clump_script.py|.
+
+
+
+
+
+
+
+\end{document}
+
