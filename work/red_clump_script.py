@@ -23,14 +23,24 @@ image_path_riemann = '/Users/devaldeliwala/research/work/plots&data/red_clump_an
 
 # access script 
 script = pd.read_csv("red_clump_analysis_script.csv")
+script2 = pd.read_csv("red_clump_analysis_script_2.csv")
+
+starting_row = 40
+starting_row -= 2
+
+processed_script = script2[:starting_row]
+unprocessed_script = script[starting_row:]
+
 
 #drops = [i for i in range(1)]
 #script = script.drop(drops)
 #print(script)
 
 # ensure outputted lists aren't strings after pd.read_csv()
-for i in ['x_range', 'parallel_cutoff1', 'parallel_cutoff2', 'xlim']: 
-    script.loc[:, i] = script.loc[:, i].apply(lambda x: literal_eval(x))
+for i in ['x_range', 'parallel_cutoff1', 'parallel_cutoff2']: 
+    unprocessed_script.loc[:, i] = script.loc[:, i].apply(lambda x: literal_eval(x))
+
+
 
 # matched star catalog
 fits ='/Users/devaldeliwala/research/work/catalogs/dr2/jwst_init_NRCB.fits'
@@ -52,10 +62,9 @@ the optimal `n` that minimizes the slope of the RC bar.
 '''
 
 # change, if necessary.
-ns = [12, 14, 16, 18]
+ns = [15, 16, 17, 18, 19, 20]
 
-slopes, d_slopes = [], []
-for index, row in script.iterrows():
+for index, row in unprocessed_script.iterrows():
 
 	region1 = row['region1']
 	region2 = row['region2']
@@ -76,8 +85,6 @@ for index, row in script.iterrows():
 
 	parallel_cutoff1 = row['parallel_cutoff1']
 	parallel_cutoff2 = row['parallel_cutoff2']
-
-	print(type(xlim))
 
 	# checking if xlim is empty -- use riemann software
 	if xlim == 0: 
@@ -137,13 +144,16 @@ for index, row in script.iterrows():
 		else: 
 			slope, d_slope = class_.run(ns = ns)
 
-		# store output slopes 
-		slopes.append(slope)
-		d_slopes.append(d_slope)
+		unprocessed_script.at[index, 'slope_1'] = slope 
+		unprocessed_script.at[index, 'd_slope_1'] = d_slope
+
+		# output script with final calculated slopes and errors
+		updated_df = pd.concat([processed_script, unprocessed_script])
+		updated_df.to_csv('red_clump_analysis_script_2.csv', index=False)
 
 	if sub_populations: 
 		class_.sub_populations(n = n, ns = ns)
-
+'''
 # append returned slopes and errors to script
 if not sub_populations: 
 	script.insert(len(script.columns), f"slope_1", slopes)
@@ -151,23 +161,7 @@ if not sub_populations:
 
 	# output script with final calculated slopes and errors
 	script.to_csv('red_clump_analysis_script_2.csv')
-
-
-'''n_iterations = 20
-
-                            bootstrap_means = []
-                            for k in range(n_iterations):
-                                sample_data = resample(self.data, replace=True)
-                                
-                                bin_heights, bin_edges = np.histogram(sample_data, bins=int(np.sqrt(len(self.data))))
-                                bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-                                
-                                fitted_model = fit(output_compound, bin_centers, bin_heights)
-                                bootstrap_means.append(fitted_model.mean_0.value)
-
-                            overall_errors.append(np.std(bootstrap_means))'''
-
-
+'''
 
 
 

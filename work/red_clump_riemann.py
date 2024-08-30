@@ -145,7 +145,7 @@ class Optimize:
     def optimize_bin(self): 
 
         mu, std = norm.fit(self.data) 
-
+        
         # initialize arrays to store succesful fit parameters
         bins, errors, amplitudes, means, stds, slopes, inters = [], [], [], [], [], [], []
 

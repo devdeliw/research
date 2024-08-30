@@ -54,11 +54,11 @@ def get_matches(t, filt1, det1, filt2, det2):
     idx1 = np.where( (filt == filt1) & (det == det1) ) 
     idx2 = np.where( (filt == filt2) & (det == det2) ) 
 
-    filt_1 = t['m_orig'][:,idx1]
-    filt_2 = t['m_orig'][:,idx2]
+    filt_1 = t['m'][:,idx1]
+    filt_2 = t['m'][:,idx2]
 
-    filt_1me = t['me_orig'][:,idx1]
-    filt_2me = t['me_orig'][:,idx2]
+    filt_1me = t['me'][:,idx1]
+    filt_2me = t['me'][:,idx2]
     
     good = np.where( (filt_1.mask == False) & (filt_2.mask == False) )
     m_filt1_match = filt_1[good]
