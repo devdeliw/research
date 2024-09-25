@@ -14,7 +14,7 @@ of now, I have a [working algorithm](https://github.com/devdeliw/research/blob/m
 can output the red clump slope with error very accurately. See
 [work/](https://github.com/devdeliw/research/tree/main/work) folder readme.   
 
-[prev_work/](https://github.com/devdeliw/research/tree/main/prev_work) contains previous JWST messy work, [work/](https://github.com/devdeliw/research/tree/main/work) **is current**.
+[z_excess](https://github.com/devdeliw/research/tree/main/z_excess) contains previous JWST messy work, and writeups for group presentations.
 
 We are close to publication so I am compiling all my work into .py files in
 the `work` directory. Within the `work` directory lies
