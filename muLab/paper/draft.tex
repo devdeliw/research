@@ -1,0 +1,205 @@
+\documentclass[twocolumn]{aastex631}
+\usepackage{draftwatermark}
+
+\graphicspath{{/Users/devaldeliwala/research/muLab/paper/plots/}}
+
+\SetWatermarkText{DRAFT}
+\SetWatermarkScale{10}
+\SetWatermarkColor[gray]{0.97}
+\usepackage{float} % for 'H' placemen
+
+\begin{document}
+
+
+\title{THE NEAR--INFRARED DISCRETE EXTINCTION LAWS OF THE GALACTIC CENTER}
+
+\author{Deval Deliwala}
+\affiliation{University of California, Berkeley}
+
+\author{Matthew Hosek} 
+\affiliation{University of California, Los Angeles} 
+
+\author{Jessica Lu} 
+\affiliation{University of California, Berkeley} 
+
+\shorttitle{Extinction Laws of Galactic Center}
+\shortauthors{Deliwala, Hosek, Lu, $\cdots$ }
+
+\begin{abstract}
+We investigate the extinction law in the Galactic Center using JWST NIRCAM
+catalogs via the Red Clump (RC) method. By analyzing four filters (1.15$\mu$m,
+2.12$\mu$m, 3.23$\mu$m, and 4.05$\mu$m) across five spatial regions (NRCB1-5)
+of the GC, we derived extinction ratios $A_\lambda / A_{K_s}$ and developed
+a novel Optimized Curve Fitting (OCF) algorithm to improve slope accuracy of
+the RC bar. Our results reveal significant spatial variations, with the
+extinction ratio differing substantially between regions. At $1/\lambda \approx
+0.31\mu m^{-1}$, NRCB3 showed the highest extinction ratio, while NRCB2 had the lowest, with the extinction laws converging at higher inverse wavelengths $1/\lambda \approx 0.81\mu m^{-1}$. Variations in extinction ratios were particularly evident at the 3.23$\mu$m wavelength, deviating significantly from the Fritz et al. (2011) GC extinction law that does not account for spatial heterogeneity. These differences were quantified, with extinction ratios differing by up to 33.8\% across models at key wavelengths, illustrating the variation in extinction behavior under different physical conditions. The observed differences suggest that local physical conditions, such as the presence of ice absorption features in the 3.23$\mu$m range, likely contribute to the spatial extinction variation.
+\end{abstract}
+
+
+
+\section{Introduction}
+Understanding the interstellar extinction law is crucial for studying the structure and star formation history of the Galactic Center (GC) and other dense regions in the Milky Way. Extinction refers to the absorption and scattering of light by dust grains along the line of sight, resulting in the reddening of stellar objects relative to their intrinsic magnitudes. The extinction law, which describes how this effect varies with wavelength, is essential for correcting astronomical observations and properly interpreting the physical characteristics of stars and other objects in these obscured regions.
+
+The extinction law is not constant throughout the galaxy and depends on both the line of sight and the physical properties of the intervening dust. In regions such as the GC, where extreme dust obscuration occurs, it's even more critical to determine an accurate extinction law to correct for these effects.
+
+In one of the early pivotal studies on deriving extinction laws, Woźniak \& Stanek (1996) introduced the Red Clump (RC) Method as a reliable technique for determining the extinction law in regions like the Galactic bulge. The RC stars, a population of evolved stars in their core-helium burning stage of stellar evolution, serve as ideal standard candles due to their relatively uniform luminosities and colors. By analyzing the mean magnitudes and colors of RC stars in different wavelength bands, the extinction law can be derived.
+
+
+More recent studies have refined the understanding of extinction in the GC. Nishiyama et al. (2009) provided a significant step forward by determining a near-infrared extinction law specific to the central regions of the Galaxy. Their work suggested that the GC extinction law differs from the standard Cardelli, Clayton, \& Mathis (1989) extinction curve, often used for the general interstellar medium. Nishiyama’s findings revealed that extinction in the near-infrared is flatter than previously thought, indicating different dust grain properties in the GC. Fritz et al. (2011) derived the Galactic Center (GC) extinction law by analyzing the gas properties within 20" of Sagittarius $A^*$. They used spectroscopic observations, specifically hydrogen lines and stellar colors, to measure the extinction by examining the infrared emission from the diffuse gas in the central region. By comparing these emissions with known intrinsic properties, they were able to determine the wavelength-dependent extinction. Fritz et al. described this extinction using a power-law model, confirming that the extinction law in the GC is flatter than the standard interstellar extinction curve, indicating distinct dust properties near the GC.
+
+Building upon this, Hosek et al. (2018) presented an updated extinction law using both optical and near-infrared photometry from the Hubble Space Telescope. This work was crucial in extending the extinction law into the optical regime, showing that the extinction law could vary significantly across different regions of the GC. The analysis also highlighted the importance of wavelength coverage in extinction studies, as shorter wavelength data provided insights into dust grain composition and size, complementing the longer-wavelength near-infrared data.
+
+These advancements, while valuable, were limited by the availability of deep photometric catalogs and multi-wavelength data, which often could not resolve the extinction law at high spatial resolution. Many previous studies treated the GC as a homogenous region, deriving a single extinction law for the entire area. However, with the recent release of photometrically-calibrated catalogs from the James Webb Space Telescope (JWST), it has become possible to probe the extinction law in much greater detail, both in terms of wavelength and spatial variation.
+
+In this study, we build upon these foundational works by applying the RC Method to the new JWST catalogs, which include four different filters spanning the near-infrared  (NIR) -- 1.15$\mu$m, 2.12$\mu$m -- to the short-wave infrared (SWIR) -- 3.23$\mu$m, 4.05$\mu$m -- across five spatial regions near the Galactic Center -- NRCB1, NRCB2, NRCB3, NRCB4, and NRCB5, whose names correspond to different detectors on the sensor chip assembly (SCA) of JWST.  This allows for a more refined determination of the extinction law, with particular focus on potential spatial variations and the influence of physical phenomena such as ice absorption features. Our goal is to investigate whether significant differences in extinction law behavior exist across these regions and how they compare to the extinction laws derived in past studies.
+
+\section{Observations and Measurements}
+
+% Information of Photometric Calibration of Catalogs 
+% What each NRCB region covers, how many stars in each region, filter, ...
+
+\section{Methods} 
+\begin{figure}  \centering
+    \includegraphics[width = \linewidth]{nrcb.pdf}
+    \caption{JWST NRCB region coverage. } 
+    \label{fig:nrcb}
+\end{figure}
+
+
+The five NRCB regions of interest are labeled in Figure \ref{fig:nrcb}. To measure the ratios of total to selective extinction $A_{J} / E_{J - K_s}$ and $A_{K_s} / E_{J - K_s}$, for example, we use the bulge RC stars, which makeup a well-defined linear clump in the GC color-magnitude diagrams (CMDs). The $J$ versus $J - K_s$ constructed within NRCB1 region, with 35403 stars, is shown in Figure \ref{fig:JVJ}, where the $F_{115W}$ (1.15$\mu$m) is the $J$ band and $F_{212N}$ (2.12$\mu$m) is the $K_s$ band.
+
+\begin{figure}[htp] 
+  \centering
+    \includegraphics[width = \linewidth]{JV-J.png}
+    \caption{NRCB1 $F_{115W} - F_{212N}$ vs. $F_{115W}$. The dashed parallel lines cutoff the RC clump.}
+    \label{fig:JVJ}
+\end{figure}
+
+The red dashed-lines in Figure \ref{fig:JVJ} cutoff the RC stars.  The
+well-defined ``RC bar" is compact, with a slope that defines the ratio of total to selective extinction $A_{F115W} / A_{F_{115W} - F_{212N}}$. This slope quantifies how far we have to ``push" stars across the CMD, in the direction defined by the RC bar, to recover the intrinsic, un-reddened magnitudes of stars. At first glance, calculating the RC slope is a trivial task, accomplishable via a linear regression. However, a regression of the RC bar depends on how one chooses to cutoff the RC bar. Any deviation in the red parallel cutoffs of Figure \ref{fig:JVJ} would result in different measurements. Of course, one could try and minimize the human-error associated with a blind cutoff by unsharp-masking, as shown in Hosek et. al (2018). This eye-dependent error persists, however, albeit less. To resolve this, an Optimized Curve Fitting (OCF) Algorithm was developed which requires minimal parameters and outputs a weighted slope calculation dependent \textit{even less} dependent on one's initial cutoff. 
+
+\subsection{Optimized Curve Fitting (OCF)}
+
+This algorithm is specifically designed to handle the irregularities and complexities inherent in CMD data, such as uneven data distributions and background star contamination. The primary goal of OCF is to fit a combination of Gaussian and Linear models to the RC region, minimizing error metrics across multiple iterations to ensure the best representation of the RC slope. OCF operates by first defining a set of initial parameters and boundary conditions. These parameters include a rough estimate of the RC bar's extent, represented by two red tight parallel lines enclosing the bar within the CMD, and the range in color-space over which the bar is analyzed. The two tight parallel cutoffs do not have to be strict by any means and expanded by three times for use, represented by the aqua lines in Figure \ref{fig:JVJcutoff}. 
+
+\begin{figure} 
+  \centering
+    \includegraphics[width = \linewidth]{cutoff.pdf}
+    \caption{NRCB1 $F_{115W} - F_{212N}$ vs. $F_{115W}$.  OCF input parameters. The aqua line represents the 3x RC expansion. The red tiles represent the ansatz segmentation cutoff. }
+    \label{fig:JVJcutoff}
+\end{figure}
+
+\subsubsection{Tile-Based Segmentation}
+
+
+The RC bar is divided into a preliminary $n$ tiles. For each tile, OCF attempts to fit a compound model combining a Gaussian distribution (representing the RC peak) and a linear component (representing the background trend). The width of each tile is initialized to $x_{\text{range}} / n$, where $x_{\text{range}}$ is the provided input color range of the RC bar. The height of each tile is confined between the extended parallel lines, which are extrapolated by a factor of three to ensure that boundary conditions do not interfere with the fitting process. The tiles set as an ansatz for OCF are shown in Figure \ref{fig:JVJcutoff}.  
+
+\subsubsection{Curve Fitting Procedure} 
+  
+The core of the OCF algorithm is an iterative fitting process that employs a combination of \verb|Gaussian1D| $+$ \verb|Linear1D| models from the astropy.modeling library over each tile. The algorithm first calculates a preliminary estimate of the Gaussian's mean and standard deviation parameter using scipy's \verb|norm.fit()|. Loose constraints are imposed on the model parameters, such as the amplitude and width of the Gaussian component, requiring them to roughly fit the distribution of data in a tile.  The fit is then iterated over a range of histogram bin counts (typically between 8 and 20), and the resulting means and standard deviations from each fit are averaged to provide a more robust estimate of the RC peak parameters. These initial fits serve as a foundation for a more refined fitting process, where stricter bounds are placed on the parameters, especially the Gaussian width and mean position.
+
+\subsubsection{Error Minimization} 
+
+\begin{figure} 
+  \centering
+    \includegraphics[width = \linewidth]{hexbin.pdf}
+    \caption{NRCB1 $F_{115W} - F_{212N}$ vs. $F_{115W}$.  Example reference vs. synthetic 2D histogram distributions and kernel density estimate (KDE) plots. }
+    \label{fig:synthetic_dist}
+\end{figure}
+
+Once the initial fits are obtained, the algorithm uses a second, more stringent fitting pass to refine the Gaussian parameters further. The standard deviation of the fit is constrained to be within a small tolerance, determined as $$\sigma_{\text{max}} = \bar{\sigma} + \xi,$$ where $\bar{\sigma}$ is the mean standard deviation from the initial fits, and $\xi$ is a constant based on the size of the data set. Similarly, the mean of the Gaussian is restricted to a small range around the preliminary mean, typically within $\pm 0.2$  units of the initial value. To validate the quality of the fit, a synthetic cluster of stars is generated using inverse transform sampling, based on the cumulative distribution function (CDF). An example synthetic distribution is shown in Figure \ref{fig:synthetic_dist}. The Wasserstein metric $W$ is then calculated between the synthetic and observed data. The fit fully considered successful if $W$ is below a defined threshold (e.g., 0.1).
+
+\subsubsection{Iteration Across Tiles} 
+
+This fitting process is applied to each tile along the RC bar. If the fitting procedure fails in a given tile (e.g., due to insufficient data or poor convergence), the ansatz tile width is slightly extended, and the process is repeated. A maximum of seven tile extensions is allowed, which was empirically found to optimize the balance between computational efficiency and accuracy in most datasets. Adjacent tile's start positions are then pushed forward to the end of the previous tile. Iteration completes once a tile's end position exceeds that of the provided $x_{\text{range}}$ input parameter. For each tile, the compound fit with the \textit{lowest error on the mean} (EOM) under the guassian part of the distribution is selected as the optimal solution for that tile. The result of the OCF procedure for NRCB1 $F_{115W} - F_{212N} $vs. $F_{115W}$ is shown in Figure \ref{fig:ocfresult}. 
+
+\onecolumngrid
+\begin{figure*}[ht]
+  \centering
+    \includegraphics[width = \linewidth]{results.pdf}
+    \caption{NRCB1 $F_{115W} - F_{212N}$ vs. $F_{115W}$.  OCF result. Each compound fit is optimized over all fit parameters. The RC bar is shown on the $xy$ plane.}
+    \label{fig:ocfresult}
+\end{figure*}
+\twocolumngrid \mbox{} \\[-20px]
+
+
+
+\subsubsection{Global Slope Determination} 
+
+Once the optimal fit parameters are determined for each tile, the global slope
+of the RC bar is computed using scipy's weighted \verb|optimize.curve_fit()|
+method. The weights are derived from the inverse squared of the EOM for each
+tile, ensuring that tiles with more reliable fits contribute more heavily to
+the  slope measurement. As this slope measurement is still dependent on the
+initial $n$ number of tiles parameter, OCF is repeated for $n = [15, 20]$. The
+final slope is the one with minimal error. A calculated final slope of $1.306
+\pm 0.01$ for NRCB1 $F_{115W} - F_{212N}$ vs. $F_{115W}$ is shown in Figure \ref{fig:slope}.
+
+
+OCF presents a significant advancement in deriving the slope of the RC with
+minimal human intervention. Unlike traditional methods that often require
+manual adjustments or heuristics to define fitting boundaries and manage
+outliers, OCF automates these processes through its adaptive tiling and
+iterative error minimization. By dynamically adjusting tile widths and applying
+stringent error metrics, OCF ensures a more reliable and precise fit, even in
+regions with data sparsity or high background contamination. This automation
+reduces the risk of bias and allows for a more consistent analysis across
+diverse CMDs and filter combinations. Another key advantage of the OCF
+algorithm is its capacity to detect potential subpopulations by segmenting the
+RC bar into different regions and applying the fitting process independently to
+each. If the slopes derived from these regions are statistically significant
+from one another, it can serve as evidence of a subpopulation within the star
+cluster. This feature allows for a deeper investigation into the structure of
+stellar populations without relying on pre-existing assumptions. However, as
+will be discussed in later sections, no statistically significant slope
+measurements were found in this study, suggesting that the RC is composed of
+a uniform population within each NRCB starcluster.
+
+\begin{table*}[htb]
+  \centering
+  \begin{tabular}{c||c|c|c|c||c}
+  $A_\lambda / A_{K_s}$ &  NRCB1 & NRCB2 & NRCB3 & NRCB4 & Fritz+11 (2011). \\
+  \hline 
+ $A_{1.15\mu m} / A_{K_s}$ & 3.44 $\pm$ 0.06 & $3.45 \pm 0.05$ & $3.54 \pm 0.11$ &  $3.21 \pm 0.06$ & 3.044 \\ 
+ $A_{3.23 \mu m} / A_{K_s}$ & $2.99 \pm 0.41$ &  $2.01 \pm 0.39$ & $3.28 \pm 0.43$
+                      & $2.49 \pm 0.48$ & $0.64$ \\ 
+ $A_{4.05 \mu m} / A_{K_s}$ & $0.40 \pm 0.03$ &  $0.34 \pm 0.03$ &  $0.24\pm 0.06$
+
+                      & $0.34 \pm 0.03$ & 0.38 
+\end{tabular}
+\caption{Extinction ratios $A_\lambda / A_{K_s}$ for different near-infrared bands and comparison with Fritz+11 (2011).}
+\end{table*}
+
+where we set the $K_s$ band equal to $2.12\mu$m. 
+
+\begin{figure}[htp!]
+  \centering
+    \includegraphics[width = \linewidth]{slope.png}
+    \caption{NRCB1   $F_{115W} - F_{212N}$   vs.   $F_{115W}$  . OCF calculated
+    an RC slope of 1.376 $\pm$ 0.007. }
+    \label{fig:slope}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = \linewidth]{slopeiso.png}
+    \caption{NRCB1 $F_{115W} - F_{212N}$ vs. $F_{115W}$ OCF (green) comparison with
+      Fritz+11 extinction vector. The Fritz vector (red) was generated by
+      plotting the path traversed by stellar isochrones of \textit{increasing}
+    extinction. The isochrones were made using SPISEA (Hosek et al. (2020)). }
+\end{figure}
+
+\begin{figure}[htb]
+  \centering
+    \includegraphics[width = \linewidth]{extinction_law.png}
+    \caption{Discretized Extinction Law for each NRCB and Fritz.}
+\end{figure}
+
+
+
+
+
+\end{document}
+
+

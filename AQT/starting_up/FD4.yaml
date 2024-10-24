@@ -1,0 +1,48 @@
+# We will use KCV2, with all junctions on
+files:
+  # dolan:
+  #   NAME: junction.overlap.y
+  #   RANGE:
+  #     - 0.5
+  #     - 0.5
+  #     - 10
+  #   sweep:
+  #     NAME: junction.overlap.x
+  #     RANGE:
+  #     - 0.1
+  #     - 0.1
+  #     - 10
+  #   sweeptype: zip
+  #   parameters: dolan.yaml
+  #   outfile: KerrCat_chip_2-dolan-%s.gds
+
+  # snail_dolan:
+  #   sweep:
+  #     junction.overlap.x:
+  #       - 0.25
+  #     loop.num:
+  #       - 1
+  #     loop.offset:
+  #       - [0, 0]
+  #     array.omit:
+  #       - false
+  #     junction.omit:
+  #       - false
+  #   sweeptype: zip
+  #   parameters: snail.yaml
+  #   outfile: KerrCat_chip_2-KCV2-snail-dolan-%s.gds
+  snail_array:
+    sweep:
+      loop.num:
+        - 1
+      loop.offset:
+        - [0, 0]
+      array.omit:
+        - false
+     
+      junction.omit:
+        - false
+      
+    sweeptype: zip
+    parameters: snail.yaml
+    outfile: Fluxonium-check1-%s.gds

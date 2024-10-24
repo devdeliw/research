@@ -1,0 +1,251 @@
+\documentclass[svgnames]{article}     % use "amsart" instead of "article" for AMSLaTeX format
+%\geometry{landscape}                 % Activate for rotated page geometry
+
+%\usepackage[parfill]{parskip}        % Activate to begin paragraphs with an empty line rather than an indent
+
+\usepackage{graphicx}                 % Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+
+%maths                                % TeX will automatically convert eps --> pdf in pdflatex
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{esint}
+\usepackage[top = 0.3in, bottom = 0.3in]{geometry}
+
+% Inverting Color of PDF
+%\usepackage{xcolor}
+%\pagecolor[rgb]{0.19,0.19,0.19}
+%\color[rgb]{0.77,0.77,0.77}
+
+%noindent
+\setlength\parindent{0pt}
+
+%pgfplots
+\usepackage{pgfplots}
+
+%images
+\graphicspath{{/Users/devaldeliwala/research/AQT/review}}                   % Activate to set a image directory
+
+%tikz
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
+\usepackage{comment}
+\usetikzlibrary{arrows}
+\usepackage[most]{tcolorbox}
+
+%Figures
+\usepackage{float}
+\usepackage{caption}
+\usepackage{lipsum}
+
+
+\title{Josephson Physics and Interaction Hamiltonian Engineering}
+\author{Deval Deliwala}
+%\date{}                              % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+%\section{}
+%\subsection{}
+%\tableofcontents                     % Activate to display a table of contents
+
+\section{Josephson Physics}
+
+Here I focus on the physics of the Josephson junction because, being nonlinear,
+it is the fundamental circuit element that gives rise to usable qubit states. 
+The nonlinearity of the Josephson
+junction breaks the degeneracy of the energy level spacings, allowing dynamics
+of the system to be restricted to only two qubit states which make up the
+\textit{computational basis}. 
+
+A Josephson tunnel is formed by separating two superconducting electrodes with
+an insulator thin enough so that electrons can quantum-mechanically
+\textit{tunnel} through the barrier, illustrated in Figure \ref{joseph} below. 
+
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 6cm]{screenshot 7.png}
+    \caption{Schematic diagram of a Josephson junction connected to a bias
+    voltage $V$. The Josephson current is given by $I_J = I_0 \sin \delta$,
+  where $\delta = \phi_L - \phi_R$ is the difference in the superconducting
+phase across the junction}
+  \label{joseph}
+\end{figure}
+
+
+The Josephson effect describes the supercurrent ($I_J$ ) that flows through the
+junction according to the classical equations 
+
+\begin{align} \label{}
+  I_J &= I_0\sin \delta \\ V &= \frac{\Phi_0}{2\pi} \frac{d \delta}{d t},
+\end{align}\vspace{3px}
+
+where $\Phi_0 = h / 2e$ is the superconducting flux quantum, $I_0$ is the
+critical-current parameter of the junction, and $\delta = \phi_L - \phi_R$ and
+$V$ are respectively the superconducting phase difference and voltage across
+the junction. The dynamical behavior of these two equations can be represented
+by the following equation: 
+
+\[
+\frac{d I_J}{d t} = I_0 \cos \delta \frac{2\pi}{\Phi_0} V.
+\] \vspace{3px}
+
+with $dI_J / dt$ proportional to $V$, this equation describes an inductor. By
+defining the Josephson inductance $L_J$ according to the conventional
+definition $V = L_J dI_J / dt$, we get 
+
+\vspace{5px}
+\begin{tcolorbox}
+  \vspace{-10px}
+  \begin{align} \label{}
+    L_J = \frac{\Phi_0}{2\pi I_0 \cos \delta}. 
+  \end{align}
+\end{tcolorbox}
+\vspace{5px}
+
+The  $1 / \cos \delta$ term reveals this inductance is nonlinear, becoming
+large as $\delta \rightarrow \pi /2$ and being negative for $\pi / 2 < \delta
+< 3 \pi / 2$.\footnote{Martinis, Osborne, \textit{Superconducting Qubits and the Physics of Josephson
+Junctions}}
+
+Inductance is energy conserving. The energy stored in the Josephson junction is
+given by the following formula, 
+
+\begin{align} \label{jospephpotential}
+  U_J &= \int I_J(t')V(t') dt' \nonumber \\ 
+      &= \int I_0 \sin \delta \cdot \frac{\Phi_0}{2\pi} \frac{d \delta }{d t'} dt'
+      \nonumber \\ 
+      &= \frac{I_0 \Phi_0}{2\pi} \int \sin \delta d\delta \nonumber \\ 
+      &= -\frac{I_0\Phi_0}{2\pi} \cos \delta
+\end{align}\vspace{3px}
+
+
+A generalized Josephson inductance can be calculated from taking the second
+derivative of $U$, 
+
+\[
+\frac{1}{L_J} = \left( \frac{2\pi}{\Phi_0} \right) ^2 \frac{\partial^2
+U(\delta)}{\partial \delta^2}  
+\] \vspace{3px}
+
+
+The general form of the Hamiltonian for the Josephson effect is 
+
+ \begin{align} \label{}
+  H_J = U_J
+\end{align}\vspace{3px}
+
+\section{Interaction Hamiltonian Engineering} 
+
+To be able to produce entanglement between quantum systems, we need an
+\textit{interaction Hamiltonian} that connects degrees of freedoms from each
+individual system. Here, I discuss the physical coupling mechanism and its
+qubit representation. 
+
+\subsubsection{Physical coupling: capacitive and inductive} 
+
+The Hamiltonian of two coupled systems takes the generalized form 
+
+\[
+H = H_1 + H_2 + H_\text{int} 
+\] \vspace{3px}
+
+where $H_1$ and $H_2$ are the individual respective Hamiltonians, and
+$H_\text{int} $ is the interaction Hamiltonian, which couples variables of both
+systems. 
+
+In superconducting circuits, what actually causes coupling energy is an
+electric and/or a magnetic field. To achieve \textit{capacitive} coupling,
+a capacitor is placed between the voltage nodes of two participating circuits,
+yielding an interaction Hamiltonian $H_int$ of the form 
+
+\[
+H_\text{int} = C_g V_1 V_2
+\] \vspace{3px}
+
+where $C_g$ is the coupling capacitance and $V_1(V_2)$ is the voltage operator
+of the corresponding voltage node being connected. 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 5cm]{screenshot 8.png}
+    \caption{Direct capacitive coupling}
+\end{figure}
+
+In the limit $C_g \ll C_1, C_2$, we yield the net Hamiltonian 
+
+
+\begin{align} \label{hami}
+  H = \sum_{i=1,2}^{} [4E_{C_i} n_i^2 - E_{J_i} \cos (\phi_i) ] + 4e^2
+  \frac{C_g}{C_1C_2} n_1n_2, 
+\end{align}\vspace{3px}
+
+The expression in the brackets are the two original Hamiltonians of the
+individual qubits and we take $V_i = (2e / C_i) n_i$. To implement the coupling
+capacitance $C_g$, one only needs to bring the edges of the capacitor pads into
+close proximity. 
+
+In the case of \textit{inductive} coupling, a mutual inductance shared by two
+loops is the coupling mechanism, yielding an interaction Hamiltonian 
+
+\[
+H_\text{int} = M_{12} I_1I_2
+\] \vspace{3px}
+
+where $M_{12}$ is the mutual inductance between the loops and $I_1$ and $I_2$
+are the current operators for the currents through the inductors. 
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width = 5cm]{screenshot 9.png}
+    \caption{Direct inductive coupling}
+    \label{couple}
+\end{figure}
+
+
+The net Hamiltonian can be expressed as 
+
+\begin{align} \label{}
+  H = &\sum_{i=1, 2}^{} \left[ 4E_{C_i} n_i^2 - E_{J_i} \cos (\phi_i)
+  + \frac{1}{2} \frac{\Phi_{L_i}^2}{L_i (1 - K^2)} \right]\nonumber \\
+      &- M_{12} (1 - K^2) \frac{\Phi_{L_1}}{L_1 (1 - K^2)}
+      \frac{\Phi_{L_2}}{L_2 (1 - K^2)}
+\end{align}\vspace{3px}
+
+where the first two terms are the energies associated with the Josephson
+junctions, the third term captures the inductor energies, and the fourth term
+is the mutual coupling energy of the form $MI_1I_2$. $\Phi_{L_1}$ and
+$\Phi_{L_2}$ are the magnetic fluxes associated with the currents flowing
+through the respective inductors. $K$ is the unitless mutual coupling factor
+defined by $M_{12} = K\sqrt{L_1L_2}$. 
+
+As we did in the previous note with the charge degree of freedom, we normalize
+the inductor and externally applied magnetic fluxes -- in this case, by the
+reduced quantum unit of flux $\Phi_0 / 2\pi$ -- to define phases $\phi \equiv
+\Phi / (\Phi_0 / 2 \pi )$ that are on the same footing as junction phases
+$\phi_1, \phi_2$. These phases must sum to zero or an integer multiple of
+$2\pi$. If $I_1, I_2$ are counterclockwise as shown in Figure \ref{couple}., 
+
+\[
+  \phi_i - \phi_{L_i} = \phi_{e_i} + 2\pi n \quad n = 0, \pm 1, \hdots. 
+\] \vspace{3px}
+
+Replacing $\phi_{L_1(L_2)}$ with $\phi_{1(2)} - \phi_{1(e_2)}$ yields the
+Hamiltonian 
+
+\begin{align} \label{}
+  H &= \sum_{i=1,2}^{} \left[ 4E_{C_i} n_i^2 - E_{J_i} \cos (\phi_i)
+    + \frac{1}{2} \frac{\left( \frac{\Phi_0}{2\pi} \right) ^2 (\phi_i
+  -\phi_{ei} )^2 }{L_i (1 - K^2)} \right] \nonumber \\ 
+    &- M_{12} (1 - K^2) \frac{\left( \frac{\Phi_0}{2\pi} \right) (\phi_1
+    - \phi_{e_1}) }{L_1 (1 - K^2)} \frac{\left( \frac{\Phi_0}{2\pi} \right)
+  (\phi_2 - \phi_{e_2})}{L_2(1-K^2)}. 
+\end{align}\vspace{3px}
+
+To realize a mutual inductance, two looped currents are brought in close
+proximity, or possibly even overlap, or could even share the same wire or
+a Josephson inductor. 
+
+
+\end{document}
+
