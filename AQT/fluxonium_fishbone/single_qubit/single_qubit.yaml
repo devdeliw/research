@@ -62,7 +62,6 @@ array:
 
 # -- evap sim
 evaporation:
-  layers: [7, 8]
   source:
     distance: 390.0e3
   resist:
