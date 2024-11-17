@@ -2,7 +2,7 @@ import gdspy
 import ruamel.yaml as yaml 
 
 from qnldraw import Params, Chip
-from qnldraw.junction import JunctionArray, JunctionLead 
+from qnldraw.junction import JunctionArray, JunctionLead, simulate_evaporation
 from qnldraw.shapes import Rectangle
 
 
@@ -196,10 +196,31 @@ class SingleQubit:
 
         return 
 
+    def evap_simulation(self): 
+        cells = self.chip.render(name='fluxonium', draw_border=False)
+        polys = cells[0].get_polygons(by_spec=True) 
+
+        highdose_layers = self.layers['lead'] + [self.layers['array'][0]]
+        lowdose_layers = self.layers['undercut'] + [self.layers['array'][1]]
+
+
+        highdose = gdspy.PolygonSet(polys[(highdose_layers[0], 0)] + polys[(highdose_layers[1], 0)], )
+        lowdose = gdspy.PolygonSet(polys[(lowdose_layers[0], 0)] + polys[(lowdose_layers[1], 0)], )
+
+        evap_params = self.params['evaporation']
+        evap_sim = simulate_evaporation(lowdose, highdose, **evap_params) 
+
+        for i, (layer, evap) in enumerate(zip(self.layers['evap'], evap_sim)): 
+            self.chip.add_component(evap, f'evap_{i}', layers=layer)
+
+        return 
+
+
     def build(self): 
         self.antenna()
         self.junction()
         self.array() 
+        self.evap_simulation()
 
         return self.chip 
 
