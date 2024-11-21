@@ -2,7 +2,8 @@
 
 Under Dr. Zahra Pedramrazi. 
 
-I am just starting off so there is not much to see. So far I've modeled
-capacitive couplers using `gdspy` and a superconducting qubit drawing package
-called `qnldraw` which I am a member of (didn't contribute anything though they
-just added me). 
+I work on writing software to design and simulate unique SQUID Fluxonium Qubit topologies. My current 
+research involves attempting to couple many qubits together with unique
+capacitor architectures.  
+
+I store old, messy work in `archive`. 
