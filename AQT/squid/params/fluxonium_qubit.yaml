@@ -1,0 +1,73 @@
+global: 
+  layers: 
+    antenna: 
+      main: [4]
+      undercut: [5] 
+    dolan: 
+      main: [3]
+      undercut: [4] 
+    array: 
+      main: [0, 1, 2]
+    mask: 
+      main: [6]
+    evap: 
+      [7, 8]
+
+antenna: 
+  pad_dim: [100, 50]
+  antenna_dim: [300, 10] 
+  antenna_gap: 60 
+  undercut_extension: 2
+
+dolan: 
+  junction_lead: 
+    total_length: 30
+    outer: 
+      width: 10 
+    inner: 
+      width: 2
+      length: 5
+    taper_length: 10 
+    extension: 0.5 
+    fillet: 0.5 
+  connector: 
+    connector_dim: [37.9, 1]
+    connector_gap: 13.3 
+  finger: 
+    central:
+      central_dim: [0.26, 0.8]
+      central_undercut_dim: [0.4, 1]
+    array_pad: 
+      gap: 15
+      array_pad_dim: [0.4, 1] 
+      undercut_length: 0.7
+      offset: 0.1   # how much y the junction array pads penetrate the thin cuts 
+                    # if antisymmetric, the left junction array is placed above 
+                    # and the offset for the left side is instead how much the 
+                    # left junction array exits the thin cut 
+  cut_parameter: 
+    L_dim: [6.9, 0.08]
+    R_dim: [7.5, 0.08] 
+    L_y_offset: 0.2 # how high above 0 the left thin cut is placed 
+    R_y_offset: 0.4 # how low below 0 the right thin cut is placed 
+
+array: 
+  n: 100
+  overlap: [5.5, 0.2]
+  wire: [0.4, 0.3] 
+  undercut: 0.6
+
+evap:
+  source:
+    distance: 390.0e3
+  resist:
+    residual_undercut: 0.05
+    upper_photoresist_thickness: 0.18
+    lower_photoresist_thickness: 0.41
+  angles:
+    theta: 45
+    phi: ['-x', '+x']
+
+
+
+    
