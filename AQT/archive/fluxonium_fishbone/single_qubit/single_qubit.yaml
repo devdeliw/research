@@ -1,0 +1,82 @@
+global: 
+  layers: 
+    antenna: [5]
+    lead: [3]
+    undercut: [4] 
+    array: [0, 1]
+    array_undercut: [2]
+    evap: [7, 8]
+    
+# -- antenna 
+antenna: 
+  pad_dim: [100, 50]
+  antenna_dim: [300, 10] 
+  pad_gap: 60
+  undercut: 2 
+  layer: 5
+
+# -- junction
+junction: 
+  leads:
+    total_length: 30
+    outer:
+      width: 10
+    inner:
+      width: 2
+      length: 5
+    taper_length: 10
+    extension: 0.5
+    fillet: 0.5
+    undercut: 1.5
+    layer: 3
+  connector: 
+    connector_dim: [37.9, 1] 
+    connector_gap: 13.3
+    connector_undercut: [0.4, 1]
+  fingers:
+    central:
+      width: 0.8
+      length: 0.26
+      undercut_length: 0.4
+      undercut_extension: 0.2
+    antisymmetric: 
+      gap: 15
+      undercut_length: 0.7
+      length: 0.4
+      width: 1
+      offset: 0.1
+  cut_parameter: 
+    L_height: 0.08 
+    R_height: 0.08
+    L_length: 6.9
+    R_length: 7.5
+    L_offset: 0.2 
+    R_offset: 0.4
+
+# -- junction array
+array: 
+  n: 100
+  overlap: [5.5, 0.2]
+  wire: [0.4, 0.3]
+  undercut: 0.6
+
+# -- evap sim
+evaporation:
+  source:
+    distance: 390.0e3
+  resist:
+    residual_undercut: 0.05
+    upper_photoresist_thickness: 0.18
+    lower_photoresist_thickness: 0.41
+  angles:
+    theta: 45
+    phi: ['-x', '+x']
+
+
+
+
+
+
+
+
+
