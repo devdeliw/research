@@ -1,0 +1,11 @@
+global: 
+  layers: 
+    antenna: 
+      main: [4] 
+      undercut: [5] 
+
+
+antenna: 
+  pad_dim: [100, 50] 
+  antenna_dim: [300, 10] 
+  antenna_gap: 60 

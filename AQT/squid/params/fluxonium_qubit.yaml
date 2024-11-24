@@ -2,7 +2,7 @@ global:
   layers: 
     antenna: 
       main: [4]
-      undercut: [5] 
+      undercut: [5]
     dolan: 
       main: [3]
       undercut: [4] 
@@ -12,12 +12,13 @@ global:
       main: [6]
     evap: 
       [7, 8]
+  lowdose: 
+    offset: 0.5
 
 antenna: 
   pad_dim: [100, 50]
   antenna_dim: [300, 10] 
-  antenna_gap: 60 
-  undercut_extension: 2
+  antenna_gap: 60
 
 dolan: 
   junction_lead: 
@@ -31,23 +32,26 @@ dolan:
     extension: 0.5 
     fillet: 0.5 
   connector: 
-    connector_dim: [37.9, 1]
-    connector_gap: 13.3 
+    connector_width: 1
+    connector_gap: 13.3
   finger: 
     central:
-      central_dim: [0.26, 0.8]
+      central_dim: [0.5, 0.8]
       central_undercut_dim: [0.4, 1]
     array_pad: 
-      gap: 15
+      gap_extra: 1
       array_pad_dim: [0.4, 1] 
       undercut_length: 0.7
       offset: 0.1   # how much y the junction array pads penetrate the thin cuts 
                     # if antisymmetric, the left junction array is placed above 
                     # and the offset for the left side is instead how much the 
                     # left junction array exits the thin cut 
+      l_extra_offset: 0.4 # how much further left the left array pad is pushed. I noticed in 
+                          # the fluxonium fishbone ipynb the array pads are not perfectly symmetric? 
+                          # if they are supposed to be just set to 0
   cut_parameter: 
-    L_dim: [6.9, 0.08]
-    R_dim: [7.5, 0.08] 
+    L_width: 0.08 
+    R_width: 0.08
     L_y_offset: 0.2 # how high above 0 the left thin cut is placed 
     R_y_offset: 0.4 # how low below 0 the right thin cut is placed 
 
@@ -56,6 +60,7 @@ array:
   overlap: [5.5, 0.2]
   wire: [0.4, 0.3] 
   undercut: 0.6
+array_bottom_connection: 1
 
 evap:
   source:

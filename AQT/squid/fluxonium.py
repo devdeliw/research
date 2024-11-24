@@ -19,6 +19,64 @@ class FluxoniumQubit:
         # -- Storing essential spacings
         # -- Used in multiple methods 
         self.antenna_gap = self.params['antenna.antenna_gap']
+        self.connector_gap = self.params['dolan.connector.connector_gap']
+
+    def param_check(self): 
+        self.central_finger_params = self.params['dolan.finger.central']
+        self.array_params = self.params['array']
+        self.dolan_params = self.params['dolan.junction_lead']
+        self.array_pad_params = self.params['dolan.finger.array_pad'] 
+
+        min_connector_gap = (
+            self.central_finger_params['central_dim'][0] 
+            + self.central_finger_params['central_undercut_dim'][0] 
+            + 0.5
+        )
+
+        if self.connector_gap < min_connector_gap: 
+            self.params['dolan.connector'].update({'connector_gap': min_connector_gap})
+            self.connector_gap = self.params['dolan.connector.connector_gap']
+
+        min_connector_gap = (
+            self.array_params['overlap'][0]
+            + 2*(self.array_params['undercut'])
+        )
+
+        if self.connector_gap < min_connector_gap: 
+            self.params['dolan.connector'].update({'connector_gap': min_connector_gap})
+            self.connector_gap = self.params['dolan.connector.connector_gap']
+
+        min_antenna_gap = 2*(
+            self.connector_gap 
+            + self.array_pad_params['gap_extra'] 
+            + self.array_pad_params['l_extra_offset'] 
+            + self.dolan_params['extension'] 
+            + self.dolan_params['taper_length']
+            + self.dolan_params['inner.length']
+        )
+
+        if self.antenna_gap < min_antenna_gap: 
+            self.params['antenna'].update({'antenna_gap': min_antenna_gap})
+            self.antenna_gap = self.params['antenna.antenna_gap'] 
+
+        return 
+
+    def lowdose(self, objects, exclusion, offset, layer): 
+        lead_lowdose = qd.offset(
+            objects, 
+            offset, 
+            join_first=True, 
+            join='round', 
+            tolerance=1, 
+        )
+        lead_lowdose = qd.boolean(
+            lead_lowdose, exclusion,  'not', layer=layer
+        )
+        self.chip.add_component(
+            lead_lowdose, 'lowdose', layer=layer
+        )
+
+        return 
 
     def antenna(self): 
         # -- Capacitive Pads \& Antennas
@@ -104,8 +162,9 @@ class FluxoniumQubit:
         # -- Junction-Antenna connector leads 
         connector_params = dolan_params['connector'] 
 
-        lx, ly = connector_params['connector_dim']
         connector_gap = connector_params['connector_gap'] 
+        lx = abs(junction_leads[1].node('lead_0')[0]-connector_gap/2)
+        ly = connector_params['connector_width']
 
         junction_connectors = [
                 Rectangle(lx, ly).translate(-(connector_gap/2 + lx/2), 0), 
@@ -124,26 +183,35 @@ class FluxoniumQubit:
         central_finger = Rectangle(lx, ly).translate(lx/2, 0)
         central_undercut = Rectangle(undercut_lx, undercut_ly).translate(-undercut_lx/2, 0)
 
+        x_min, x_max = central_undercut.get_bounding_box()[0][0], central_finger.get_bounding_box()[1][0]
+        x_offset = -(x_min + x_max)/2 
+
+        central_finger.translate(x_offset, 0)
+        central_undercut.translate(x_offset, 0)
+
         ## -- Thin Cut Leads conneciting central finger to array pads 
         cut_params = dolan_params['cut_parameter']
 
-        llx, lly = cut_params['L_dim']
-        l_y_offs = cut_params['L_y_offset'] # -- vertical offset of lead from y origin 
-                                          # -- absolute value (positive input) 
+        llx = abs(central_undercut.get_bounding_box()[0][0] - junction_connectors[0].get_bounding_box()[1][0])
+        lly = cut_params['L_width']
+        l_offset = cut_params['L_y_offset']
 
-        rlx, rly = cut_params['R_dim']
-        r_y_offs = cut_params['R_y_offset'] # -- vertical offset of lead from y origin 
-                                          # -- absolute value (positive input) 
+        rlx = abs(central_undercut.get_bounding_box()[1][0] - junction_connectors[1].get_bounding_box()[0][0])
+        rly = cut_params['R_width']
+        r_offset = cut_params['R_y_offset']
+
+
         cut_leads = [
-                Rectangle(llx, lly).translate(-llx/2 - undercut_lx, l_y_offs), 
-                Rectangle(rlx, rly).translate(rlx/2, -r_y_offs)
+            Rectangle(llx, lly).translate(central_undercut.get_bounding_box()[0][0] - llx/2, l_offset), 
+            Rectangle(rlx, rly).translate(central_undercut.get_bounding_box()[1][0] + rlx/2, -r_offset), 
         ]
 
         # -- Symmetric or Antisymmetric array pads 
         array_pad_params = finger_params['array_pad']
 
-        array_pad_gap = array_pad_params['gap']
+        array_pad_gap_extra = array_pad_params['gap_extra']
         array_pad_offs = array_pad_params['offset']
+        left_pad_extra_offset = array_pad_params['l_extra_offset']
 
         lx, ly = array_pad_params['array_pad_dim']
         undercut_lx = array_pad_params['undercut_length']
@@ -155,15 +223,17 @@ class FluxoniumQubit:
             l_offs =  array_pad_offs 
             r_offs = -ly+array_pad_offs
 
-        array_pad_fingers = [
-                Rectangle(lx, ly).translate(-array_pad_gap/2, l_offs), 
-                Rectangle(lx, ly).translate(+array_pad_gap/2, r_offs), 
-        ]
         array_pad_undercuts = [
                 Rectangle(undercut_lx, ly).translate(
-                    -array_pad_gap/2 - lx + (undercut_lx - ly)/2, l_offs), 
+                    -connector_gap/2-array_pad_gap_extra-left_pad_extra_offset, l_offs),
                 Rectangle(undercut_lx, ly).translate(
-                    +array_pad_gap/2 + lx + (undercut_lx - lx)/2, r_offs), 
+                    +connector_gap/2+array_pad_gap_extra, r_offs), 
+        ]
+        array_pad_fingers = [
+                Rectangle(lx, ly).translate(
+                    -connector_gap/2 - array_pad_gap_extra+(undercut_lx+lx)/2-left_pad_extra_offset, l_offs), 
+                Rectangle(lx, ly).translate(
+                    +connector_gap/2 + array_pad_gap_extra+(undercut_lx+lx)/2, r_offs), 
         ]
 
         # -- Adding all components to chip 
@@ -187,6 +257,9 @@ class FluxoniumQubit:
         self.chip.add_component(array_pad_fingers, 'array pad fingers', layers=main_layer) 
         self.chip.add_component(array_pad_undercuts, 'array pad undercuts', layers=undercut_layer)
 
+        self.array_pad_undercuts = array_pad_undercuts
+
+
         return self.chip 
 
     def array(self): 
@@ -194,36 +267,34 @@ class FluxoniumQubit:
         array_layers = self.layers['array']
         array_pad_params = self.params['dolan.finger.array_pad']
         connector_params = self.params['dolan.connector']
-        gap = array_pad_params['gap']
+        gap = connector_params['connector_gap'] + array_pad_params['gap_extra']
 
 
         array_pad_width = array_pad_params['array_pad_dim'][1]
-        connector_width = connector_params['connector_dim'][1]
+        connector_width = connector_params['connector_width']
         array_pad_offset = array_pad_params['offset']
 
-        depth = ( 
-                array_pad_width 
-                + array_pad_offset 
-                + connector_width/2 
-        )
+        y_pos = self.array_pad_undercuts[1].get_bounding_box()[0][1]
+        x_pos = self.array_pad_undercuts[1].get_bounding_box()[0][0] + (
+            self.array_pad_undercuts[1].get_bounding_box()[1][0]
+            - self.array_pad_undercuts[1].get_bounding_box()[0][0]
+        )/2 
+
+
+                    
 
         # -- JunctionArray; The # of array elements defined in params 
         array = JunctionArray(**array_params) 
 
-        left_array = array.place(location=[-gap/2, -depth], node='wire1') 
-        right_array = array.place(location=[gap/2, -depth], node='wire1') 
+        left_array = array.place(location=[-x_pos, y_pos], node='wire1') 
+        right_array = array.place(location=[x_pos, y_pos], node='wire1') 
 
         bottom_connection = Rectangle( 
                 right_array.node('wire2')[0] - left_array.node('wire2')[0], 
-                array_params['overlap'][1], 
+                self.params['array_bottom_connection'], 
         ).translate(
                 0, 
-                -(
-                    left_array.node('wire1')[1]
-                    - left_array.node('wire2')[1]   
-                    - array_params['overlap'][1]/2 
-                    + depth 
-                ), 
+                left_array.node('wire2')[1] - self.params['array_bottom_connection']/2 + array_params['overlap'][1]
         )
         array_components = [left_array, right_array, bottom_connection] 
 
@@ -275,6 +346,7 @@ class FluxoniumQubit:
         return self.chip 
 
     def build(self, antenna=True, dolan=True, array=True, square_mask=True, evap=True): 
+        self.param_check()
         if antenna: 
             self.antenna() 
         if dolan: 
@@ -372,7 +444,7 @@ if __name__ == '__main__':
     chip = Chip() 
 
     class_ = FluxoniumQubitArray(chip, params)
-    chip = class_.build(3, 3, 2000, 2000)
+    chip = class_.build(1, 1, 2000, 2000)
 
     cells = chip.render('single_qubit', include_refs=True)
 

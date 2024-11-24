@@ -4,7 +4,7 @@ global:
     lowdose: 2 
     bandage: 10 
     evap: [8, 9]
-  outer_spacing: 105 
+  outer_spacing: 105
   inner_spacing: 5.35
 
 bandage: 

@@ -2,6 +2,7 @@ import os
 
 import gdspy
 import numpy as np
+from numpy.core.multiarray import inner
 import qnldraw as qd
 import qnldraw.junction as qj
 import qnldraw.shapes as shapes
@@ -207,6 +208,19 @@ class FD4:
         self.central_finger = Rectangle(central_finger_lx, central_finger_ly).translate(
             central_finger_origin[0], central_finger_origin[1]
         )
+        
+        central_finger_undercut_ly = abs(
+            self.dolan_leads[0].node('lead_0')[1]
+            + central_finger_ly 
+            -self.dolan_leads[1].node('lead_0')[1]
+        )
+
+        self.central_finger_undercut = Rectangle(
+            central_finger_lx, 
+            central_finger_undercut_ly).translate(
+                central_finger_origin[0], 
+                central_finger_origin[1]+central_finger_ly/2+central_finger_undercut_ly/2
+        )
 
         # -- Left Connection to Inner Dolan JunctionLeads
         right_bound = (
@@ -228,12 +242,16 @@ class FD4:
         ).translate(bottom_connection_origin[0], bottom_connection_origin[1])
 
         # -- Adding to chip
-        dolan_lead_layer = self.layers["highdose"]
+        dolan_lead_layer = self.layers['highdose']
+        dolan_undercut_layer = self.layers['lowdose']
         self.chip.add_component(
             self.dolan_leads, "dolan junction leads", layers=dolan_lead_layer
         )
         self.chip.add_component(
             self.central_finger, "central finger", layers=dolan_lead_layer
+        )
+        self.chip.add_component(
+            self.central_finger_undercut, 'central finger undercut', layers=dolan_undercut_layer
         )
         self.chip.add_component(
             self.bottom_wire, "bottom connection", layers=dolan_lead_layer
