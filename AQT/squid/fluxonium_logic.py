@@ -39,12 +39,22 @@ class Fluxonium:
                 (
                     central_finger_params['central_dim'][0] 
                     + central_finger_params['central_undercut_dim'][0]
-                    + 0.5 # arbitrary num based on aesthetic
+                    + 1 # arbitrary num based on aesthetic
                 ), 
                 (
                     self.array_params['overlap'][0]
                     + 2*self.array_params['undercut']
-                )
+                ),
+                2*(
+                    central_finger_params['central_dim'][0]
+                    + self.params['global.lowdose.offset']
+                    + 1 # arbitrary num based on aesthetic
+                ),
+                2*(
+                    central_finger_params['central_undercut_dim'][0]
+                    + self.params['global.lowdose.offset'] 
+                    + 1 # arbitrary num based on aesthetic
+                ), 
         )
 
         ## update self.connector_gap  
@@ -189,8 +199,8 @@ class Fluxonium:
         x_max = self.central_finger.get_bounding_box()[1][0]
         x_offset = (x_max - x_min) / 2 
 
-        self.central_finger.translate(x_offset, 0)
-        self.central_undercut.translate(x_offset, 0) 
+        #self.central_finger.translate(np.abs(x_offset), 0)
+        #self.central_undercut.translate(np.abs(x_offset), 0)
 
         ### thin cut leads connecting central finger(s) to connectors
         cut_params = dolan_params['cut_parameter']
@@ -405,7 +415,7 @@ class Fluxonium:
 
         return self.chip 
 
-    def build(self, antenna=True, dolan=True, array=False, mask=True, evap=True): 
+    def build(self, antenna=False, dolan=False, array=False, mask=True, evap=False): 
 
         if all([antenna, dolan, array]): 
             self.param_check() 
@@ -529,7 +539,7 @@ if __name__ == '__main__':
                             antenna=True, 
                             dolan=True, 
                             array=True, 
-                            mask=False, 
+                            mask=True, 
                             evap=True
     )
 
@@ -551,5 +561,6 @@ if __name__ == '__main__':
         f'{file_dir}{file_name}.gds', 
         cells=[cells[0].flatten()], 
     )
+
 
 
