@@ -447,15 +447,15 @@ class Render:
 
     def render(
         self,
-        bandages=True, 
-        junction_leads=True, 
-        inductive_leads=True, 
-        outer_junction_leads=True, 
-        dolan_junction_leads=True, 
-        inner_dolan_leads=True, 
-        central_lead=True, 
+        bandages=False, 
+        junction_leads=False, 
+        inductive_leads=False, 
+        outer_junction_leads=False, 
+        dolan_junction_leads=False, 
+        inner_dolan_leads=False, 
+        central_lead=False, 
         junction_array=True, 
-        simulate_evap=True
+        simulate_evap=False 
     ): 
 
 
@@ -487,7 +487,6 @@ class Render:
                 # still requires the 'inner_junction' parameters 
                 # to exist in the .yaml file
                 self.build_inner_dolan(add_to_chip=False)
-            return
 
         logic()
         if bandages: 
