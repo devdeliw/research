@@ -1,0 +1,23 @@
+vertical_couplers: 
+  Lneck: 300
+  Lsegment: 250
+  cutout: 
+    x: 525
+    y: 850
+  radius: 45 
+  span: 580
+  turns: 8
+
+cpw: 
+  width: 20
+  gap: 10
+
+coupler_pad:
+  fingers:
+    width: 20
+    length: 30
+  base:
+    width: 20
+  gap: 20
+
+layer: 4

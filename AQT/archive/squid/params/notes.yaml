@@ -1,0 +1,35 @@
+
+# Mask Code 
+Goal 1  
+Make the mask 
+
+Goal 2 
+Check the resonator frequency of each resonator, 
+the g (coupling) of the resonator and the bus -- gives the Quality Factor Q of the resonator 
+
+Goal 3
+Simulation
+
+Goal 4
+Fabrication 
+
+Goal 5
+Make any changes as necessary \& repeat 
+
+
+## Fluxonium  Fishbone Code 
+- Fix evaporation bumps, Make array junction pads connected to junction array 
+- Make the gaps between junction array adjustable 
+- Make the bottom connection width adjustable 
+- Make all par.meters adjustable with fluxonium fixing itself accordingly 
+- Add undercut around dolan leads 
+
+
+
+
+
+
+
+
+
+

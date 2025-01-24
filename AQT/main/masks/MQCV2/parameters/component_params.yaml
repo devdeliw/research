@@ -1,0 +1,82 @@
+# ReadoutBus
+# ----------
+purcell_filter:
+  length: 7575
+  length_reduction: 350
+  coupler:
+    fingers:
+      num: 18
+      width: 5
+      length: 200
+      horizontal_gap: 5
+      vertical_gap: 10
+    taper:
+      length: 200
+      gap: 87.5
+
+layer: 3
+bus_y_center: 350
+
+readout_launch:
+  bondpad:
+    width: 125.0
+    length: 125.0
+    gap: 56.5
+  taper_length: 100.0
+
+launch_x_offset: 150
+launch_y: -4450
+shift_x_position: 1000
+
+hero_bond:
+  y_offset: 200
+  gap: 500
+
+cpw:
+  width: 30
+  gap: 17.5
+radius: 142.5
+
+
+# CouplingResonator
+# -----------------
+
+vertical_couplers:
+    lengths:
+        - 4341.237912268683
+        - 4251.728812268684
+        - 4179.158812268684
+        - 4251.728812268684
+        - 4179.158812268684
+        - 4341.237912268683
+    Lneck: 300
+    cutout:
+        x: 525
+        y: 850
+    radius: 45
+horizontal_couplers:
+    lower:
+        y_position: -4650
+        meander:
+          ys: 
+            - -4300
+          lengths: 450
+    upper:
+        y_position: 4600
+        meander:
+          ys: 
+            - 3750
+            - 4250
+          lengths: 535
+    radius: 90
+cpw:
+    width: 20
+    gap: 10
+coupler_pad:
+    fingers:
+        width: 20
+        length: 30
+    base:
+        width: 20
+    gap: 20
+layer: 4
