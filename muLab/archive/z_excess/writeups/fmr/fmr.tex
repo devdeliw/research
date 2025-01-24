@@ -1,0 +1,291 @@
+\documentclass[svgnames]{article}     % use "amsart" instead of "article" for AMSLaTeX format
+%\geometry{landscape}                 % Activate for rotated page geometry
+
+%\usepackage[parfill]{parskip}        % Activate to begin paragraphs with an empty line rather than an indent
+
+\usepackage{graphicx}                 % Use pdf, png, jpg, or eps§ with pdflatex; use eps in DVI mode
+
+%maths                                % TeX will automatically convert eps --> pdf in pdflatex
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{esint}
+\usepackage{geometry}
+
+% Inverting Color of PDF
+%\usepackage{xcolor}
+%\pagecolor[rgb]{0.19,0.19,0.19}
+%\color[rgb]{0.77,0.77,0.77}
+
+%noindent
+\setlength\parindent{0pt}
+
+%pgfplots
+\usepackage{pgfplots}
+
+%images
+%\graphicspath{{ }}                   % Activate to set a image directory
+
+%tikz
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.15}
+\usepackage{comment}
+\usetikzlibrary{arrows}
+\usepackage[most]{tcolorbox}
+
+%Figures
+\usepackage{float}
+\usepackage{caption}
+\usepackage{lipsum}
+
+
+\title{Stellar Fundamental Metallicity Relation}
+\author{Deval Deliwala}
+%\date{}                              % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+%\section{}
+%\subsection{}
+%\tableofcontents                     % Activate to display a table of contents
+
+\section{Background Information}
+
+
+The gas in a galaxy's interstellar medium (ISM) and the stars themselves evolve
+together over time, with their chemical compositions influencing each other. \\
+
+The metallicity (fraction of heavier elements relative to all baryonic matter)
+of a galaxy reflects a history of star formation, gas inflow and outflow,
+throughout time. As stars form and explode, they enrich the ISM with metals.
+Along with other galactic events like mergers or gas inflow/outflow,
+influences the amount and distribution of metals, encoding a history of the
+galaxies' interactions and internal processes.\\
+
+Previous studies show that stellar and gas metallicities scale with stellar
+mass, known as the \textit{mass-metallicity} relations (MZRs). The more massive
+galaxies on average are more chemically enriched than lower mass galaxies. Gas
+metallicity has also been shown to depend on the recent star formation
+activity of a galaxy (gFMR). When a galaxy experiences bursts of star formation, they
+use up gas and may lead to higher metallicity as supernovae eject metals into
+the surrounding gas. However, intense star formation can also reduce
+metallicity if the enriched gas is expelled entirely from the galaxy. 
+
+\subsection{Previous Results}
+
+\begin{itemize}
+  \item At a fixed stellar mass, star-forming galaxies tend to have
+    \textit{lower} metallicities than quiescent, inactive galaxies. 
+  \item Galaxies in between star-forming and inactive phases follow an
+    mass metallicity  relation in the middle 
+  \item Galaxies with younger stars, like spiral galaxies, generally have lower
+    metallicities than older galaxies at \textit{all} mass levels. 
+\end{itemize}
+
+\paragraph{The Goal of the Study} \mbox{} \\
+
+This study extends previous research by exploring the stellar mass-metallicity
+relation (sFMR) in a new way -- focusing on recent star formation activity.
+Instead of solely looking at stellar ages, they analyze how stellar metallicity
+varies with a galaxy's position relative to the \textit{Star-Forming Main
+Sequence} (SFMS) -- which is statistical relationship showing how galaxy's
+star formation rates (SFR) scale with their stellar masses. They rename this
+relation as the sFMR -- or \textit{stellar fundamental metallicity relation},
+which links metallicity  to \textit{both} stellar mass and current star
+formation. This is to show that stellar metallicity in galaxies can also be
+understood via the combined effects of stellar mass and recent star formation
+activity. 
+
+\section{Collecting Data}
+
+They use the MaNGA dataset from the SDSS DR17. This data has spatially resolved
+spectra, a very high signal-to-noise ratio and a large sample size. To compare
+their MaNGA results with current cosmological simulations, they collect an
+analogous sample of simulated galaxies from the IlustricTNG simulation suite
+that contains stellar masses, mass-weighted mean metal mass fractions of star
+particles.
+
+
+\section{Procedure}
+
+They begin by calculating distance from the SFMS for every galaxy in the MaNGA
+sample. This distance quantifies how a galaxy's star formation rate compares to
+the expected value for a galaxy of its mass. 
+
+\paragraph{Figure 1 \& 2} \mbox{} \\ 
+
+The stellar mass - star formation rate diagram, which visually represents the
+relationship between galaxy's stellar mass and its star formation rate (SFR).
+\\
+
+A prominent feature of this diagram is the SFMS -- the linear relationship
+between the total stellar mass and the SFR for star-forming galaxies. Here it
+is represented by the white dashed-line. Actively star-forming galaxies lie
+along this sequence. They calculate a best-fit of the SFMS as 
+
+\[
+  MS(M_*) = -7.96 + 0.76\log_{10}(M_*[M_\odot]).
+\] \vspace{3px}
+
+When doing the same calculation with their synthetic galaxy sample from
+IllustrisTNG, they calculated a value of 
+
+\[
+  MS_\text{TNG}(M_*) = -6.28 + 0.63 \log_{10} (M_* [M_\odot]). 
+\] \vspace{3px}
+
+\begin{itemize}
+  \item Any spatial pixel with an $SNR>1$ is discarded. Afterwards, the data is
+    binned in radial annuli to ensure all the data in each bin has a higher
+    median SNR. 
+  \item The spectra from each spaxel is summed, resulting in a binned spectra
+    for analysis. 
+  \item The binned spectra is then fitted using a customized $\chi^2$ 
+    minimization Penalized Pixel-Fitting (PPXF) code which accounts for both
+    the stellar and gas components of the spectra 
+    \begin{itemize}
+      \item \textbf{Gas Emission Lines}: Fitted using Gaussians that describe
+        the distribution of light from the emission lines 
+      \item \textbf{Stellar Continuum}: Fitted using a library of Simple
+        Stellar Population (SSP) templates which account for various ages and
+        metallicities
+    \end{itemize}
+  \item This method is referred to as  \textit{astro-archaeological} approach
+    because it treats the observed stellar populations as \textit{fossil
+    records} of a galaxy's star formation history. 
+  \item By fitting the spectra with both SSPs and gas emission lines, they say
+    they can disentangle the contributions of different stellar populations and
+    their star formation activity -- helping reconstruct the galaxy's history,
+    including periods of intense star formation and inactivity. 
+\end{itemize}
+
+\paragraph{More Detailed Steps} \mbox{} \\
+
+\begin{itemize}
+  \item Step 1 -- Sky Masking \& Normalization
+    \begin{itemize}
+      \item Mask the sky emission lines to reduce atmospheric interference.
+      \item Normalize the observed spectrum and SSP templates by the median
+        flux per  spectral pixel, preventing overfitting to noise in teh data. 
+    \end{itemize}
+  \item Step 2 -- Initial PPXF Fit
+    \begin{itemize}
+      \item An initial PPXF fit is performed to estimate the intrinsic noise in
+        the spectrum and filter out problematic spectral pixels 
+    \end{itemize}
+  \item Step 3 -- $3\sigma$ Clipping
+    \begin{itemize}
+      \item a $3\sigma$ clipping processes is performed. Gas emission lines are
+        excluded since they are allowed to have really high fluxes and thus
+        high residuals 
+    \end{itemize}
+  \item Step 4 -- Refitting with PPXF
+    \begin{itemize}
+      \item The spectrum is fit again with PPXF using the updated noise
+        estimate, yielding a new best-fit solution $y(\lambda)$. 
+    \end{itemize}
+  \item Step 5 -- Residual-Based Bootstrapping
+    \begin{itemize}
+      \item A bootstrapping method is employed to assess the fits reliability.
+        The best-fit solution $y(\lambda)$ is perturbed by the residuals from
+        the initial fit, leading to a modified spectrum $y^*(\lambda)$. This
+        perturbation involves adding and removing random residuals from the
+        original fit. 
+    \end{itemize}
+  \item Step 6 -- Iterative Fitting
+    \begin{itemize}
+      \item The perturbed spectrum is again fit using PPXF, without any noise
+        estimate. 
+    \end{itemize}
+  \item Averaging over Iterations
+    \begin{itemize}
+      \item Steps 5-6 are repeated 100 times averaging all the age-metallicity
+        weights to recover the star-formation history consistent with the
+        intrinsic noise of the spectrum. 
+    \end{itemize}
+\end{itemize}
+
+This process does not depend on any assumption about the underlying physics of
+galaxy evolution. 
+
+
+\section{The Stellar Fundamental Metallicity Relation}
+
+\paragraph{Figure 3} \mbox{} \\ 
+
+Here they present the global sFMR. By summing over the spectral analysis
+results over spatially resolved measurements, they find a fit for 6 different
+$\Delta_{MS}$ bins. \\
+
+The positive slope indicates that as the stellar mass of a galaxy increases,
+its light-weighted average metallicity increases. The more massive galaxies
+tend to have higher metallicities. \\
+
+Additionally, as $\Delta_{MS}$ increases (galaxies are more star-forming),
+their metallicity decreases relative to the inactive ones. 
+
+This also suggests more massive galaxies have more efficient processes for
+converting gas into stars and recycling them back into the ISM. \\
+
+\paragraph{Figure 5} \mbox{} \\ 
+
+They repeat the analysis but focusing on younger stellar populations
+$<10^{8.5}$ yrs. The found that more star-forming galaxies have \textit{lower}
+metallicities than the inactive populations across all stellar populations. The
+young metallicity values however are systematically higher than the total
+metallicity values for galaxies at all masses and distances from the MS.
+
+
+\section{Starvation Hypothesis}
+
+The difference in metallicity between star-forming (SF) and quiescent galaxies
+is interpreted as evidence for a phenomenon called starvation. This hypothesis
+posits that even after the supply of low-enrichment gas ceases, star formation
+can continue in a galaxy. \\
+
+As a result, the ISM (interstellar medium) becomes increasingly enriched with
+metals because the same gas is recycled through multiple star formation
+episodes without being diluted by newly accreted low-metallicity gas. \\
+
+The underlying assumption is that galaxies with low-metallicity/high star
+formation rates (MS) will evolve into high-metallicity/low star formation rate
+(quiescent) galaxies over time.\\ 
+
+Comparing different MS bins in the local Universe may not capture this
+evolutionary trend, as these galaxies are not necessarily linked by direct
+progenitor–descendant relationships. However, if the metallicities of quiescent
+galaxies were compared to their SF progenitors, the metallicity gap would be
+even more pronounced. 
+
+\section{Metal Retention -- Gravitational Potential Wells} 
+
+In contrast, the Gravitational Well hypothesis posits that the difference in
+MZR between SF and inactive galaxies is because galaxies with a higher
+$M_*/R_e$ c an retain more metals as their gravitational potential reduces the
+outflows of metal enriched gas. \\
+
+However, they implemented this idea to estimate how much outflow would occur,
+but found a small metallicity offset to still persist, implying that even
+though it does occur, other processes are likely more dominant in forming the
+sFMR. 
+
+\section{Conclusion}
+
+The gas-phase Fundamental Metallicity Relation (gFMR) connects star formation
+and gas metallicity over long time scales, while the stellar FMR (sFMR) extends
+this correlation, linking the star formation rate (SFR) to the light-weighted
+metallicity of the stars over similar time frames.\\
+
+This relationship suggests that galaxies experience continuous inflows of
+low-metallicity gas from the intergalactic medium (IGM) or circumgalactic
+medium (CGM), which not only fuels star formation but also maintains a balance
+between metal production and dilution in the ISM.\\
+
+The correlation observed for SF galaxies suggests that the processes governing
+their metallicity and star formation operate over extended periods rather than
+being driven by short bursts of star formation or gas accretion. \\
+
+This aligns with theoretical models predicting long-lasting gas inflow
+mechanisms that regulate star formation and chemical enrichment in galaxies.
+
+\end{document}
+
