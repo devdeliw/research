@@ -109,7 +109,6 @@ class Diagram:
 
             if color_by_density: 
                 plt.colorbar(scatter.collections[0], label='Density')
-            plt.tight_layout()
 
             if not os.path.exists(self.image_dir): 
                 os.makedirs(self.image_dir)
@@ -118,6 +117,8 @@ class Diagram:
                 filename = f'{self.mag1name}-{self.mag2name}_{self.magyname}'
             else: 
                 filename = f'{self.mag1name}-{self.mag2name}_{self.magyname}_bbox'
+            
+            plt.tight_layout()
             if save_image: 
                 plt.savefig(f'{self.image_dir}{filename}.png', dpi=300)
             return plt
@@ -231,15 +232,15 @@ class RidgeTracing(Diagram):
 
     def gradient(self): 
         H, _, _ = self.density_kernel(smooth=True)
-        self.grad_x = ndimage.sobel(H, axis=1)
-        self.grad_y = ndimage.sobel(H, axis=0)
+        self.grad_x = ndimage.sobel(H, axis=0)
+        self.grad_y = ndimage.sobel(H, axis=1)
         self.H_smooth = H
         return 
 
     # Helper Functions for Render Ridge
-    def color_to_idx(self, c, offset):
+    def color_to_idx(self, c):
         j = np.searchsorted(self.xedges, c) - 1
-        return j-offset
+        return j
 
     def mag_to_idx(self, m):
         i = np.searchsorted(self.yedges, m) - 1
@@ -264,14 +265,13 @@ class RidgeTracing(Diagram):
 
         self.gradient() # calculate gradients for all histogram bins
         all_paths = [] 
-
         for (start_x, start_y) in ansatz: 
-            x, y = self.color_to_idx(start_x, offset=9), self.mag_to_idx(start_y)
+            x, y = self.color_to_idx(start_x), self.mag_to_idx(start_y)
             path = [(x, y)] # initialize path to store ridge 
 
             for _ in range(max_iterations): 
-                i = int(round(y))
-                j = int(round(x))
+                i = int(round(x))
+                j = int(round(y))
 
                 if (
                     i < 0 or i >= self.N_mag_bins or 
@@ -284,27 +284,39 @@ class RidgeTracing(Diagram):
                 # magnitude of gradient vector 
                 grad_mag = np.sqrt(gx**2 + gy**2) 
 
-                # end ridge if gradient vector becomes very small
+                # end ridge if gradient becomes very small
                 # (we've hit a peak)
                 if grad_mag < 1e-7: 
                     break 
 
                 x += step_size * (gx / grad_mag)
                 y += step_size * (gy / grad_mag)
-
                 path.append((x, y))
 
             all_paths.append(path)
 
         # Figure plotting 
         # ---------------
-
         plt = self.render(
             plot_by_mags=False, 
             color=self.color,
             magy=self.magnitude, 
             save_image=False
         )
+
+        extent = [
+            self.xedges[0], self.xedges[-1], 
+            self.yedges[0], self.yedges[-1]
+        ]
+        plt.imshow(
+            self.H_smooth.T,  
+            origin='lower',  
+            extent=extent,
+            aspect='auto',  
+            cmap='viridis',
+            alpha=0.3, 
+        )
+        plt.gca().invert_yaxis()
 
         for path in all_paths: 
             if len(path) == 0: 
@@ -314,9 +326,9 @@ class RidgeTracing(Diagram):
             x_indices = np.array(x_indices)
             y_indices = np.array(y_indices) 
 
+
             color_vals = self.color_min + x_indices * (self.color_max - self.color_min) / self.N_color_bins
             mag_vals   = self.mag_min + y_indices * (self.mag_max - self.mag_min) / self.N_mag_bins
-
             plt.plot(color_vals, mag_vals, 'r-', linewidth=2)
 
         if render_image:
@@ -368,7 +380,9 @@ if __name__ == '__main__':
         }
     )
 
-    ansatz = [(6.7, 21.8), (7.8, 23.2), (7.1, 22.2), (7.17, 22.53)]
+    ansatz = [
+        (6.95, 22.3), (6.625, 21.78), (7.2, 22.55), (7.7, 23.35), (6.85, 22.2), 
+    ]
 
 
     RidgeTracing(
