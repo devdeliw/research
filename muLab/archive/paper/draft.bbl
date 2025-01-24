@@ -1,0 +1,61 @@
+\begin{thebibliography}{}
+
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+
+\providecommand{\url}[1]{\href{#1}{#1}}
+
+\bibitem[{{Benjamin} {et~al.}(2003){Benjamin}, {Churchwell}, {Babler},
+    {Indebetouw}, {Meade}, \& {Whitney}}]{Benjamin2003}
+  {Benjamin}, R.~A., {Churchwell}, E., {Babler}, B.~L., {et~al.} 2003, \pasp, 115, 953
+
+\bibitem[{{Cardelli} {et~al.}(1989){Cardelli}, {Clayton}, \&
+    {Mathis}}]{Cardelli1989}
+  {Cardelli}, J.~A., {Clayton}, G.~C., \& {Mathis}, J.~S. 1989, \apj, 345, 245
+
+\bibitem[{{Draine}(2003)}]{Draine2003}
+  {Draine}, B.~T. 2003, \araa, 41, 241
+
+\bibitem[{{Fitzpatrick}(1999)}]{Fitzpatrick1999}
+  {Fitzpatrick}, E.~L. 1999, \pasp, 111, 63
+
+\bibitem[{{Fitzpatrick} \& {Massa}(2007)}]{Fitzpatrick2007}
+{Fitzpatrick}, E.~L., \& {Massa}, D. 2007, \apj, 663, 320
+
+\bibitem[{{Fritz} {et~al.}(2011){Fritz}, {Gillessen}, {Dodds-Eden}, {Lutz},
+    {Genzel}, {Raab}, {Ott}, {Pfuhl}, {Eisenhauer}, \&
+    {Yusef-Zadeh}}]{Fritz2011}
+  {Fritz}, T.~K., {Gillessen}, S., {Dodds-Eden}, K., {et~al.} 2011, \apj, 737, 73
+
+\bibitem[{{Girardi} {et~al.}(2001){Girardi}, {Bertelli}, {Bressan}, {Chiosi},
+    {Groenewegen}, {Marigo}, {Salasnich}, \& {Weiss}}]{Girardi2001}
+  {Girardi}, L., {Bertelli}, G., {Bressan}, A., {et~al.} 2001, \aap, 141, 371
+
+\bibitem[{{Hosek} {et~al.}(2018){Hosek}, {Lu}, {Anderson}, {Ghez}, {Morris}, 
+    {Do}, {Becklin}, \& {Matthews}}]{Hosek2018}
+  {Hosek}, M.~W., {Lu}, J.~R., {Anderson}, J., {et~al.} 2018, \apj, 855, 13
+
+\bibitem[{{Messineo} {et~al.}(2005){Messineo}, {Habing}, {Sjouwerman},
+    {Omont}, \& {Menten}}]{Messineo2005}
+  {Messineo}, M., {Habing}, H.~J., {Sjouwerman}, L.~O., {et~al.} 2005, \aap, 435, 575
+
+\bibitem[{{Minniti} {et~al.}(2010){Minniti}, {Lucas}, {Emerson}, {Saito},
+    {Hempel}, {Alonso-Garcia}, {Irwin}, \& {Gonzalez-Solares}}]{Minniti2010}
+  {Minniti}, D., {Lucas}, P.~W., {Emerson}, J.~P., {et~al.} 2010, \na, 15, 433
+
+\bibitem[{{Nogueras-Lara} {et~al.}(2018){Nogueras-Lara}, {Sch{\"o}del}, 
+    {Gallego-Cano}, {Dong}, {Girardi}, \& {Neumayer}}]{NoguerasLara2018}
+  {Nogueras-Lara}, F., {Sch{\"o}del}, R., {Gallego-Cano}, E., {et~al.} 2018, \aap, 610, A83
+
+\bibitem[{{Nogueras-Lara} {et~al.}(2020){Nogueras-Lara}, {Sch{\"o}del}, 
+    {Gallego-Cano}, {Neumayer}, \& {Yelda}}]{NoguerasLara2020}
+  {Nogueras-Lara}, F., {Sch{\"o}del}, R., {Gallego-Cano}, E., {et~al.} 2020, \aap, 641, A141
+
+\bibitem[{{Nishiyama} {et~al.}(2009){Nishiyama}, {Tamura}, {Hatano},
+    {Kato}, {Tanab{\'e}}, \& {Sugitani}}]{Nishiyama2009}
+  {Nishiyama}, S., {Tamura}, M., {Hatano}, H., {et~al.} 2009, \apj, 696, 1407
+
+\bibitem[{{Wozniak} \& {Stanek}(1996)}]{Wozniak1996}
+  {Wozniak}, P.~R., \& {Stanek}, K.~Z. 1996, \apj, 464, 233
+
+\end{thebibliography}
+
