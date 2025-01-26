@@ -62,7 +62,7 @@ class Diagram:
             y = np.array(self.magy)
         else: 
             try:
-                x = color 
+                x = np.array(color)
                 y = np.array(magy)
             except ValueError: 
                 print(
@@ -70,8 +70,13 @@ class Diagram:
                     required for plot_by_mags=False.'
                 )
 
-        xy = np.vstack([x, y])
-        density = gaussian_kde(xy)(xy) 
+        mask = ~np.isnan(x) & ~np.isnan(y) 
+        x = x[mask]
+        y = y[mask]
+
+        xy = np.array(np.vstack([x, y]))
+        xy = xy[:, ~np.isnan(xy).any(axis=0)]
+        density = gaussian_kde(xy)(xy)
 
         data = pd.DataFrame(
             {
@@ -256,7 +261,7 @@ class RidgeTracing(Diagram):
     def render_ridge(
         self,
         ansatz,
-        step_size=1, 
+        step_size=10, 
         max_iterations=200, 
         render_image=True, 
     ): 
@@ -457,7 +462,7 @@ if __name__ == '__main__':
     slope, intercept = RidgeTracing(
             mf115w, mf212n, mf115w,
             'F115W', 'F212N', 'F115W', 
-            rc_bbox, 
+            bbox=rc_bbox, 
     ).slope(ansatz=ansatz)
 
     print(slope, intercept)

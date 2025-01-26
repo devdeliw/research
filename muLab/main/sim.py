@@ -92,14 +92,43 @@ class Render(RidgeTracing, LocateRC):
 
         return ansatz_points 
 
-    def gradient_ascent(
+    def general_ansatz(
         self, 
-        num_ansatz=40,
-        eps=0.1, 
-        min_samples=50,
+        num_ansatz, 
+        rc_color, 
+        rc_mag, 
     ): 
+        color_range = max(rc_color) - min(rc_color) 
 
-        ansatz_points = self.dbscan_ansatz(num_ansatz, eps, min_samples)
+        # Vertical bin boundaries 
+        bin_width = color_range / num_ansatz 
+        start = min(rc_color) 
+        bins = []
+        for _ in range(num_ansatz): 
+            bins.append([start, start+bin_width])
+            start = start+bin_width
+ 
+        ansatz_points = []
+        for bin in bins: 
+            # indices of stars within bin boundaries
+            interior_idxs = (rc_color > bin[0]) & (rc_color < bin[1])
+
+            bin_color = np.array(rc_color)[interior_idxs] 
+            bin_mag = np.array(rc_mag)[interior_idxs] 
+
+            # select random coordinate
+            try: 
+                idx = np.random.randint(0, len(bin_color))
+                ansatz_points.append([bin_color[idx], bin_mag[idx]])
+            except ValueError: 
+                continue 
+
+        self.rc_x = rc_color 
+        self.rc_y = rc_mag
+
+        return ansatz_points
+
+    def gradient_ascent(self, ansatz_points): 
 
         # calculate rc cluster bounding box
         rc_bbox = pd.DataFrame(
@@ -149,10 +178,18 @@ if __name__ == '__main__':
         'F212N', 'NRCB1', 
     )
 
-    slope, intercept = Render(
-            mf115w, mf212n, mf115w,
-            'F115W', 'F212N', 'F115W', 
-    ).gradient_ascent(eps=0.1, min_samples=50) 
+    render = Render(
+        mf115w, mf212n, mf115w, 
+        'F115W', 'F212N', 'F115W',
+        region='NRCB1'
+    )
+
+    ansatz_points= render.dbscan_ansatz(eps=0.1, min_samples=50)
+    slope, intercept = render.gradient_ascent(
+        ansatz_points
+    )
+
+    print(slope, intercept)
 
 
 
