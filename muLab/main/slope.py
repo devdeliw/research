@@ -1,11 +1,11 @@
 import os 
 import numpy as np 
 import pandas as pd 
-import flystar 
 
 from astropy.table import Table
 from scipy.stats import gaussian_kde
 from catalog_helper_functions import get_matches 
+from scipy.optimize import curve_fit
 
 import scipy.ndimage as ndimage
 import matplotlib.pyplot as plt 
@@ -15,6 +15,9 @@ import seaborn as sns
 class Diagram: 
     """
     Standalone class for plotting color-magnitude diagrams. 
+
+    The color-magnitude diagram is defined as 
+    `mag1` - `mag2` vs. `magy`. 
 
     Args: 
         mag1 (array-like): magnitudes for first wavelength catalog.
@@ -29,6 +32,7 @@ class Diagram:
             self, 
             mag1, mag2, magy, 
             mag1name, mag2name, magyname, 
+            region, 
             image_dir='./images/cmds/',
     ): 
         self.mag1 = mag1 
@@ -37,7 +41,7 @@ class Diagram:
         self.mag1name = mag1name 
         self.mag2name = mag2name 
         self.magyname = magyname 
-        self.image_dir = image_dir 
+        self.image_dir = f'{image_dir}{region}/{mag1name}-{mag2name}/'
         return 
 
     def render(
@@ -99,7 +103,7 @@ class Diagram:
             plt.gca().invert_yaxis()
             plt.title(
                 f'{self.mag1name} - {self.mag2name} vs. {self.magyname}', 
-                fontsize=16)
+                fontsize=14)
             plt.xlabel(
                 f'{self.mag1name} - {self.mag2name} (mag)', 
                 fontsize=14)
@@ -185,7 +189,7 @@ class RidgeTracing(Diagram):
         self, 
         mag1, mag2, magy, 
         mag1name, mag2name, magyname, 
-        bbox,
+        region, bbox,
         N_color_bins=100, N_mag_bins=100, 
         image_dir='./images/ridge/', 
     ): 
@@ -198,7 +202,7 @@ class RidgeTracing(Diagram):
         self.N_color_bins = N_color_bins
         self.N_mag_bins = N_mag_bins
         self.bbox = bbox 
-        self.image_dir = image_dir
+        self.image_dir = f'{image_dir}{region}/{mag1name}-{mag2name}/'
         return 
 
     def density_kernel(
@@ -231,6 +235,7 @@ class RidgeTracing(Diagram):
         return H, xedges, yedges 
 
     def gradient(self): 
+        # calculates gradient map for every histogram bin
         H, _, _ = self.density_kernel(smooth=True)
         self.grad_x = ndimage.sobel(H, axis=0)
         self.grad_y = ndimage.sobel(H, axis=1)
@@ -238,6 +243,7 @@ class RidgeTracing(Diagram):
         return 
 
     # Helper Functions for Render Ridge
+    # ---------------------------------
     def color_to_idx(self, c):
         j = np.searchsorted(self.xedges, c) - 1
         return j
@@ -245,13 +251,13 @@ class RidgeTracing(Diagram):
     def mag_to_idx(self, m):
         i = np.searchsorted(self.yedges, m) - 1
         return i
-
+    #----------------------------------
 
     def render_ridge(
         self,
         ansatz,
         step_size=1, 
-        max_iterations=100, 
+        max_iterations=200, 
         render_image=True, 
     ): 
         """
@@ -262,8 +268,9 @@ class RidgeTracing(Diagram):
             max_iterations (int): max interations for ridge off a starting point. 
 
         """
-
         self.gradient() # calculate gradients for all histogram bins
+        x_ridge, y_ridge = [], [] # will eventually store all ridge coordinates
+
         all_paths = [] 
         for (start_x, start_y) in ansatz: 
             x, y = self.color_to_idx(start_x), self.mag_to_idx(start_y)
@@ -271,7 +278,12 @@ class RidgeTracing(Diagram):
 
             for _ in range(max_iterations): 
                 i = int(round(x))
-                j = int(round(y))
+                j = int(round(y)) 
+
+                if i >= self.grad_x.shape[0]:  
+                    continue 
+                if  j >= self.grad_x.shape[1]:
+                    continue
 
                 if (
                     i < 0 or i >= self.N_mag_bins or 
@@ -304,18 +316,21 @@ class RidgeTracing(Diagram):
             save_image=False
         )
 
+        # Histogram bins boundingbox
         extent = [
             self.xedges[0], self.xedges[-1], 
             self.yedges[0], self.yedges[-1]
         ]
+        # Overlay heat map
         plt.imshow(
             self.H_smooth.T,  
             origin='lower',  
             extent=extent,
             aspect='auto',  
             cmap='viridis',
-            alpha=0.3, 
+            alpha=0.3,
         )
+        # Invert y-axis (convention)
         plt.gca().invert_yaxis()
 
         for path in all_paths: 
@@ -329,14 +344,68 @@ class RidgeTracing(Diagram):
 
             color_vals = self.color_min + x_indices * (self.color_max - self.color_min) / self.N_color_bins
             mag_vals   = self.mag_min + y_indices * (self.mag_max - self.mag_min) / self.N_mag_bins
-            plt.plot(color_vals, mag_vals, 'r-', linewidth=2)
 
+            x_ridge.append(color_vals)
+            y_ridge.append(mag_vals) 
+
+            plt.scatter(
+                color_vals, mag_vals, 
+                c='orange', marker='d', 
+                s=10, alpha=0.7,
+            )
+            plt.gca().invert_yaxis()
+
+        self.x_ridge = np.hstack(x_ridge) # flatten 
+        self.y_ridge = np.hstack(y_ridge) # flatten
+
+        # Save image
         if render_image:
-            filename = f'{self.mag1name}-{self.mag2name}vs.{self.magyname}_RIDGE'
+            filename = f'{self.mag1name}-{self.mag2name}_{self.magyname}_RIDGE'
             if not os.path.exists(self.image_dir): 
                 os.makedirs(self.image_dir)
             plt.savefig(f'{self.image_dir}{filename}.png', dpi=300) 
-        return 
+        return plt 
+
+    def slope(
+        self,
+        ansatz, 
+        step_size=1, 
+        max_iterations=100, 
+        render_image=True, 
+        render_slope=True, 
+    ): 
+        # Method to calculate final RC slope for the provided 
+        # 'mag1` - 'mag2` vs. `magy` color magnitude diagram.
+        _plt_ = self.render_ridge(ansatz, step_size, max_iterations, render_image)
+
+        def linear(x, m, b): 
+            return m*x + b
+    
+        # linear fit
+        popt, _ = curve_fit(linear, self.x_ridge, self.y_ridge)
+        slope, intercept = popt # RC linear fit parameters
+
+        x_min, x_max = min(self.bbox['color']), max(self.bbox['color'])
+        x_values = np.linspace(x_min, x_max, 10)
+
+        if render_slope: 
+            _plt_.figtext(
+                    0.1, 0.1, 
+                    f'slope: {slope.round(3)}, intercept: {intercept.round(3)}', 
+                    bbox=dict(facecolor='white', alpha=0.8, edgecolor='black'), 
+            )
+            _plt_.plot(x_values, linear(x_values, *popt), 'r:', linewidth=2)
+            _plt_.xlim(min(self.bbox['color']), max(self.bbox['color']))
+            _plt_.ylim(max(self.bbox['mag']), min(self.bbox['mag']))
+            
+            filename = f'{self.mag1name}-{self.mag2name}_{self.magyname}_SLOPE'
+            if not os.path.exists(self.image_dir): 
+                os.makedirs(self.image_dir)
+            _plt_.savefig(f'{self.image_dir}{filename}.png', dpi=300)
+
+        return slope, intercept
+        
+
         
 
 
@@ -385,11 +454,13 @@ if __name__ == '__main__':
     ]
 
 
-    RidgeTracing(
+    slope, intercept = RidgeTracing(
             mf115w, mf212n, mf115w,
             'F115W', 'F212N', 'F115W', 
             rc_bbox, 
-    ).render_ridge(ansatz=ansatz)
+    ).slope(ansatz=ansatz)
+
+    print(slope, intercept)
 
 
 
