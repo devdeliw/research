@@ -9,5 +9,5 @@ capacitor architectures.
 I store old, messy work in `archive`. 
 
 
-![](/images/4_chip.png) 
-![](/images/fluxonium.png) 
+![](images/4_chip.png) 
+![](images/fluxonium.png) 
