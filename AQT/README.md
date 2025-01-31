@@ -7,3 +7,7 @@ research involves attempting to couple many qubits together with unique
 capacitor architectures.  
 
 I store old, messy work in `archive`. 
+
+
+![](/images/4_chip.png) 
+![](/images/fluxonium.png) 
