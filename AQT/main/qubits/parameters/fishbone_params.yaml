@@ -1,0 +1,79 @@
+antenna: 
+  pad_dim: [100, 50] 
+  lead_dim: [300, 10]
+  gap: 60 
+lowdose_offset: 0.5
+
+junction_lead: 
+  outer:
+    length: 15
+    width: 10 
+  inner: 
+    width: 2
+    length: 5
+  taper_length: 10 
+  extension: 0.5 
+  fillet: 0.5
+
+connector: 
+  width: 1
+  gap: 13.3
+
+fingers:
+  central_fingers: 
+    finger_dim: [0.5, 0.8]
+    undercut_dim: [0.4, 1]
+  array_pads: 
+    x_offset: 0.75 
+    y_offset: 0.1
+    length: 0.4
+    width: 1 
+    lowdose_length: 0.7
+
+inductive_leads: 
+  l_width: 0.08
+  r_width: 0.08
+  ly_offset: 0.188
+  ry_offset: 0.392 
+
+array: 
+  n: 100
+  overlap: [5.5, 0.2]
+  wire: [0.3, 0.3] 
+  undercut: 0.6
+bottom_connection_width: 1 
+
+layers: 
+  leads: 3 
+  lowdose: 5 
+  array: [0, 1, 2]
+  antenna: 4
+  evap: [7, 8]
+
+evap:
+  source:
+    distance: 390.0e3
+  resist:
+    residual_undercut: 0.05
+    upper_photoresist_thickness: 0.18
+    lower_photoresist_thickness: 0.41
+  angles:
+    theta: 45
+    phi: ['-x', '+x']
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
