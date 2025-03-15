@@ -1,0 +1,97 @@
+
+# -- general layout
+pad_spacing: 95
+squid_loop_area: 225
+junction_position: lower_left
+junction_asymmetry: 1
+layers:
+  highdose: 1
+  lowdose: 2
+
+# -- bandages
+bandages:
+  lx: 10
+  ly: 15
+  lead_overlap: 0.5
+  layer: 10
+
+# -- junction leads 
+leads: 
+  total_length: 34 
+  outer:
+    width: 5
+  inner: 
+    width: 2
+    length: 1
+  taper_length: 2
+  fillet: 0.5
+  pad_overlap: 5
+  undercut: 0.5
+  radius: 0
+
+# -- general wires
+wire: 
+  width: 1
+  taper_length: 2.0 
+  undercut: 0.35
+
+# -- connecting junction to array 
+outer_junction: 
+  total_length: 3 
+  outer: 
+    width: 2
+    length: 0
+  inner: 
+    width: 1 
+    length: 1
+  taper_length: 2 
+  fillet: 0 
+  extension: 5.42
+
+# -- inner dolan junction 
+junction: 
+  total_length: 2.02 
+  outer: 
+    width: 1
+    length: 0
+  inner: 
+    width: 0.17
+    length: 1
+  taper_length: 1.03 
+  fillet: 0
+  extension: 0 
+  middle_length: 0.985
+  middle_width: 0.15
+
+# -- josephson array 
+array: 
+  number: 100 
+  width: 0.76
+  gap: 0.14
+
+# -- bottom JunctionLead
+bottom_junction: 
+  total_length: 2 
+  outer: 
+    width: 2 
+    length: 0 
+  inner: 
+    width: 1 
+    length: 0 
+  taper_length: 2 
+  extension: 0
+  fillet: 0 
+
+
+
+evaporation: 
+  layers: [8, 9]
+  source: 
+    distance: 390.0e3
+  resist: 
+    residual_undercut: 0.2
+    upper_photoresist_thickness: 0.1
+    lower_photoresist_thickness: 0.58 
+  angles: 
+    theta: 70
+    phi: ['+y', '-y']

@@ -1,0 +1,29 @@
+#### ==================== SIMULATE JUNCTION EVAPORATION ==================== ###
+evaporation:
+  junctions:
+    number: 100
+    overlap: [5.5, 0.2]
+    wire: [0.4, 0.3]
+    undercut: [0.7, 0.6] # undercut_b previously = 0.6
+  layers: [7, 8]
+  source:
+    distance: 390.0e3
+  resist:
+    residual_undercut: 0.05
+    upper_photoresist_thickness: 0.18
+    lower_photoresist_thickness: 0.41
+  angles:
+    theta: 45
+    phi: ['-x', '+x']
+### ==================== JUNCTION LEADS ==================== ###
+leads:
+  outer:
+    width: 10
+  inner:
+    width: 2
+    length: 5
+  taper_length: 10
+  fillet: 0.5
+  pad_overlap: 5
+  undercut: 1.5
+

@@ -1,0 +1,89 @@
+global: 
+  layers:
+    highdose: 1 
+    lowdose: 2 
+    bandage: 10 
+    evap: [8, 9]
+  outer_spacing: 105
+  inner_spacing: 5.35
+
+bandage: 
+  lx: 10
+  ly: 15
+  bandage_overlap: 0.5 
+
+outer_junction_lead: 
+  total_length: 34
+  outer: 
+    width: 5 
+  inner: 
+    width: 2 
+    length: 1
+  taper_length: 2 
+  extension: 0.5
+  fillet: 0.5 
+  undercut: 0.5 
+  radius: 0
+
+connector: 
+  width: 1
+  undercut: 0.35 
+
+array_junction_lead: 
+  total_length: 3.01
+  outer: 
+    width: 2
+    length: 0
+  inner: 
+    width: 1
+    length: 1
+  taper_length: 2
+  fillet: 0
+  extension: 5.42
+
+dolan:
+  total_length: 2.03
+  outer: 
+    width: 1
+    length: 0
+  inner: 
+    width: 0.17
+    length: 1
+  taper_length: 1.03
+  junction_gap: 0.37
+  finger_width: 0.15 
+  finger_length: 0.985
+  finger_offset: 0.15
+
+array: 
+  number: 100
+  width: 0.76
+  gap: 0.14
+
+bottom_junction:
+  total_length: 2
+  outer: 
+    width: 2 
+    length: 0
+  inner: 
+    width: 1
+    length: 0
+  taper_length: 2
+  extension: 0
+  fillet: 0
+
+evap: 
+  source: 
+    distance: 390.0e3
+  resist: 
+    residual_undercut: 0.2
+    upper_photoresist_thickness: 0.1
+    lower_photoresist_thickness: 0.58 
+  angles: 
+    theta: 70
+    phi: ['+y', '-y']
+  
+
+
+
+
